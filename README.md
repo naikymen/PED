@@ -7,6 +7,9 @@ The "list-entry-new" file contains the entries in the new format.
 
 ## Dependencies
 ATSAS (autorg, datgnom, cablam, etc. https://www.embl-hamburg.de/biosaxs/download.html)
+
 MolProbity (no server needed, build/bin/molprobity.* tools only http://molprobity.biochem.duke.edu/)
+
 R (with data.table and Cairo packages)
+
 PyMol
