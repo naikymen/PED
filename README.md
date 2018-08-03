@@ -13,3 +13,6 @@ MolProbity (no server needed, build/bin/molprobity.* tools only http://molprobit
 R (with data.table and Cairo packages)
 
 PyMol
+
+## Notes
+I have installed and run these tools in a Docker image of Ubuntu 18.04.
