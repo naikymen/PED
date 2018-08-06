@@ -4,9 +4,9 @@
 
 # A docker test, so far seems OK
 # Paths must be set appropiately by using the script options (see help with -h).
-  # docker run -it --rm -v ~/Projects/Chemes/IDPfun/PED-DB2/:/home/PED-DB2/ --volume="$HOME/.Xauthority:/root/.Xauthority:rw" --env="DISPLAY" --net=host  ubuntu:molprob /bin/bash
-  # cd /home/PED-DB2/
-  # bash pedbPipe.sh -p /home/PED-DB2/Scripts/ -m /home/PED-DB2/PDB-all-models/ 1AAB PED1AAB 2 5 1 3
+  # docker run -it --rm -v ~/Projects/Chemes/IDPfun/PED-DB3/:/home/PED-DB3/ --volume="$HOME/.Xauthority:/root/.Xauthority:rw" --env="DISPLAY" --net=host  ubuntu:molprob /bin/bash
+  # cd /home/PED-DB3/
+  # bash pedbQC3.sh -p /home/PED-DB3/Scripts/ -m /home/PED-DB3/PDB-all-models/ 1AAB PED1AAB 2 5 1 3
 
 # Initialize our own variables:
 # These can be overwritten by using command-line options.
@@ -102,10 +102,10 @@ function pedbQC {
 
   # Sacan so see if the input arguments look OK
 
-  pat="\w{4}\s\w{7}((\s[0-9]+)+)"
-  asd="$@"
+  pat2="\w{4}\s\w{7}((\s[0-9]+)+)"
+  ars="$@"
 
-  if [[ $asd =~ $pat ]]; then
+  if [[ $ars =~ $pat2 ]]; then
     echo "Input arguments are cool! $@" | tee -a $logName
   else
     echo "ERROR: Input arguments are not cool! $@ " | tee -a $logName
@@ -146,19 +146,29 @@ function pedbQC {
 
   # Check for UNK residures
   	# The RES string begins at 18 and ends at 20
-  cat ${xxxx}-all.pdb | awk '/^ATOM.+/ { print $0 "LINE: " NR }' | awk '/^.{17}UNK.+/ { print "Warning! UNK residue at ATOM " $2 ", line " $NF " of the PDB file."}' | tee -a $logName
-    # Check for Q atoms (NMR dummies)
-      # The element column may be usefol for filtering
+  printf "\nScan for UNK residues\n" | tee -a $logName
+  cat ${xxxx}-all.pdb | awk '/^ATOM.+/ { print $0 "LINE: " NR }' | awk '/^.{17}UNK.+/ { print "Warning! UNK residue at ATOM " $2 ", line " $NF " of the PDB file."}' >> $logName
+  tail $logName -n 5
+   
+  # Check for Q atoms (NMR dummies)
+      # The element column may be useful for filtering
     # Make temporary PDB files w/o the dummy ones, to not mess up the originals
     # Perhaps checking the hydrogen naming version is being too picky
+  printf "\nScan for Q pseudoatoms\n" | tee -a $logName
+  cat ${xxxx}-all.pdb | awk '/^ATOM.+/ { print $0 "LINE: " NR }' | awk '/^.{17}Q[A-Z].+/ { print "Warning! Pseudoatom at line " $NF " of the PDB file."}' >> $logName
+  tail $logName -n 5
+  	# http://www.chem.uzh.ch/robinson/felixman/pseudoatom.html
+
   
   # Check for missing residues
   #cat ${xxxx}-all.pdb | awk '/^ATOM.+/ { print $0 "LINE: " NR }' | awk '/^.{17}(\ ).+/ { print "Warning! Missing residue at ATOM " $2 ", line " $NF " of the PDB file."}' | tee -a $logName
-
   # Check for missing chain information
   	# Select ATOM lines and append the line number from the PDB file
   	# Select entries with whitespace where the chain should be found (position 22)
-  cat ${xxxx}-all.pdb | awk '/^ATOM.+/ { print $0 "LINE: " NR }' | awk '/^.{21}(\ ).+/ { print "Warning! Missing chain at ATOM " $2 ", line " $NF " of the PDB file."}' | tee -a $logName
+  printf "\nScan for missing chain data\n" | tee -a $logName
+  cat ${xxxx}-all.pdb | awk '/^ATOM.+/ { print $0 "LINE: " NR }' | awk -v entryid="$xxxx" '/^.{21}(\ ).+/ { print "Warning! Missing chain information at ATOM " $2 ", line " $NF " of the "entryid" PDB file."}' >> $logName
+  tail $logName -n 5
+
 
   # To-do
   	# Validation by MolProbity
@@ -178,20 +188,28 @@ function pedbQC {
     # returns the start lines for each model with /^Bad/
     # the clash counts for each one, by counting /^\ [A-Z][\ |0-9]+\ [A-Z]{3}/
   # The following also adds comments preceded by '#'' to each section (counts and summary)
-  # 
-  ${molprobity_binaries}molprobity.clashscore ${xxxx}-all.pdb > ${xxxx}-all.clashscore
-  cat ${xxxx}-all.clashscore | awk '/^MODEL/{if(count != 0) print count "\n\n#Clashscore summary"; count =0; print $0; next;}/^\ [A-Z][\ |0-9]+\ [A-Z]{3}/{count ++; next;}/^Bad\ Clashes/{print count; print $0; count = 0;next;}'
-  # Add a comment
-  sed '1s;^;# Bad clash count per model;' ${xxxx}-all.clashscore
+  #printf "\nRun Molprobity clashscore\n" | tee -a $logName
+  #${molprobity_binaries}molprobity.clashscore ${xxxx}-all.pdb > pedQC/${xxxx}-all.clashscore
+  #cat pedQC/${xxxx}-all.clashscore | awk '/^MODEL/{if(count != 0) print count "\n\n#Clashscore summary"; count =0; print $0; next;}/^\ [A-Z][\ |0-9]+\ [A-Z]{3}/{count ++; next;}/^Bad\ Clashes/{print count; print $0; count = 0;next;}'  > pedQC/${xxxx}-all.summary.clashscore
+  
+  # Add a comment at the beggining of the clashscore file
+  #sed -i '1s;^;# Bad clash count per model;' pedQC/${xxxx}-all.summary.clashscore
+  
+  printf "\nRun Molprobity ramalyze\n" | tee -a $logName
+  #${molprobity_binaries}molprobity.ramalyze ${xxxx}-all.pdb > pedQC/${xxxx}-all.ramalyze
+  #cat ${xxxx}-all.ramalyze | awk '/SUMMARY/{print $0}' > pedQC/${xxxx}-all.summary.ramalyze
 
-  ${molprobity_binaries}molprobity.ramalyze ${xxxx}-all.pdb > ${xxxx}-all.ramalyze
-  cat ${xxxx}-all.ramalyze | awk '/SUMMARY/{print $0}'
+  printf "\nRun Molprobity cablam\n" | tee -a $logName
+  #${molprobity_binaries}molprobity.cablam ${xxxx}-all.pdb > pedQC/${xxxx}-all.cablam
+  #cat ${xxxx}-all.cablam | awk '/SUMMARY/{print $0}' > pedQC/${xxxx}-all.summary.cablam
 
-  ${molprobity_binaries}molprobity.cablam ${xxxx}-all.pdb > ${xxxx}-all.cablam
-  cat ${xxxx}-all.cablam | awk '/SUMMARY/{print $0}'
+  printf "\nRun Molprobity cbetadev\n" | tee -a $logName
+  #${molprobity_binaries}molprobity.cbetadev ${xxxx}-all.pdb > pedQC/${xxxx}-all.cbetadev
+  #cat ${xxxx}-all.cbetadev | awk '/SUMMARY/{print $0}' > pedQC/${xxxx}-all.summary.cbetadev
 
-  ${molprobity_binaries}molprobity.cbetadev ${xxxx}-all.pdb > ${xxxx}-all.cbetadev
-  cat ${xxxx}-all.cbetadev | awk '/SUMMARY/{print $0}'
+  # Cleanup
+  cd ..
+  printf "\nAll items done.\n" | tee -a $logName
 }
 
 
@@ -235,7 +253,7 @@ if [ "$input_file" = '' ]; then
 
 else
 
-  logNameList=$logPath/$input_file$leeme
+  logNameList="${logPath}/${input_file}${leeme}"
 
   echo "
   Your input was a list with $entry_amount lines.
@@ -243,36 +261,41 @@ else
   Unparsed arguments: $@
   Log files can be found within each entry folder.
   " | tee $logNameList
+
+  pwd
   
   pat="\w{4}[,\t\s-]\w{7}(([,\t\s-][0-9]+)+)"
   #pat="\w{4},\w{7}((,[0-9]+)+)"  # Parse only CSV format
   while read line; do
-    echo "
-    Now parsing list...
-    " | tee -a $logNameList
+    printf "\nNow parsing list...\n" | tee -a $logNameList
+
+    pwd
 
     if [[ $line =~ $pat ]]; then
       # Read the line of the list file as arguments, separating them as needed.
-      argumentos=`echo $line | sed -E "s/[,\t\s-]+/\ /g"`
+      argumentos=`printf $line | sed -E "s/[,\t\s-]+/\ /g"`
       
-      # Setup logs
-      logEntry=`echo $argumentos | sed -E 's/\w{4}\s(\w{7})((\s[0-9]+)+)/\1/'`
-      mkdir -p $logEntry
-      logName=$logPath/$logEntry/$logEntry$leeme
+      # Setup logs for the entry (XXXX)
+      logEntry=`printf "$argumentos" | sed -E 's/\w{4}\s(\w{7})((\s[0-9]+)+)/\1/'`
+      mkdir -p ${logEntry}/pedQC
+      logName="${logPath}/${logEntry}/pedQC/${logEntry}${leeme}"
       
-      echo "Your input was a list of entries.
-      Now processing entry: $argumentos" | tee $logName
+      printf "\nNow processing entry $argumentos of the list...\n" | tee $logName
+
 
       # Let the magic happen:
       pedbQC $logName $argumentos
 
-      echo "All items done.
-      " | tee -a $logName
     fi
+
+    # Calculate the number or warnings in the logfile (there should be 26 non-warning lines, so subtract them)
+    wcLog=`wc -l $logName | awk '{print $1}'`
+    linesInLog=$( expr $wcLog - 26 )
+
+    printf "\tWarnings written to logfile: $linesInLog \n" | tee -a $logNameList
+
   done < $input_file
 
-  echo "QC has finished, it should be OK if no warnings have appeared.
-  Check the logfiles within the entry folders.
-  " | tee -a $logNameList
+  printf "\nQC has finished, check the logfile at ${logNameList}\n" | tee -a $logNameList
   exit 0
 fi

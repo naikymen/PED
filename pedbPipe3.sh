@@ -223,7 +223,11 @@ function pedb {
   # The following files will be read by the first Perl script.
   printf ${pedxxxx} > ID-model
   printf ${first} > NUM-model
-  bzip2 -fckd ${pdbs_path}${xxxx}-all.pdb.bz2 > ../${xxxx}-all.pdb
+  
+  if [ ! -f ../${xxxx}-all.pdb ]; then
+    bzip2 -fckd ${pdbs_path}${xxxx}-all.pdb.bz2 > ../${xxxx}-all.pdb
+  fi
+  
   perl ${all_scripts}Pipe0-PDB-model-separator-2018.pl ../${xxxx}-all.pdb
   bzip2 -c ../${xxxx}-all.pdb > ../${xxxx}-all.pdb.bz2
   rm ../${xxxx}-all.pdb
