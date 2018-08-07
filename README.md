@@ -26,5 +26,5 @@ $ bash pedbPipe3.sh -w /path/to/entry_folder -c /path/to/pedb.cfg -l list-entry-
 $ bash pedbPipe3.sh -w /path/to/entry_folder -c /path/to/pedb.cfg 1AAA PED1AAA 3 32 1 12 22
 ```
 
-The -w flag can be passed to specify the working directory, where we expecto to have read/write permissions.
+The -w flag can be passed to specify the working directory, where we expec to have read/write permissions.
 Otherwise, the default behaviour is to use the output of ```pwd```.
