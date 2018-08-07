@@ -50,6 +50,17 @@ while getopts "h?c:w:l:p:m:s:n" opt; do
 
         -w  Set the working directory.
 
+	        # Default behavior is to move to the directory where the script is executed (pwd)
+	        # Unless other options are used, all required files are assumed to be in the working directory
+		# This is equivalent to using following configuration file:
+				input_file=''
+				all_scripts=${working_directory}/Scripts/
+				pdbs_path=./
+				saxs_path=./
+				ref_saxs_path=$saxs_path
+				logPath=./
+				molprobity_binaries='/home/MolProbity/build/bin/' 
+
         -c  Load options from a configuration file.
 
 			# Directory where the auxiliary scripts are.
