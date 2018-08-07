@@ -17,8 +17,12 @@
 # ?
 entry_amount=1
 
-# Extension for the log files
+# Default behavior is to read a single entry from the arguments
+input_file=""
+
+# Extension and parent location for the log files
 leeme=".log"
+logPath=./
 
 # Parse options with getopts
 # A POSIX variable
@@ -33,9 +37,41 @@ while getopts "h?c:w:l:p:m:s:" opt; do
         -h  Show this help and exit.
 
         -c  Load options from a configuration file.
+
+			# Specify a file from which entries will be loaded.
+			# It should be a plain CSV file, use the help flag for the format specifications.
+			input_file='list-entry'
+
+			# Directory where the auxiliary scripts are.
+			# This string must end with a slash "/"
+			all_scripts='./Scripts/'
+
+			# Directory where the PDB files are
+			# This string must end with a slash "/"
+			pdbs_path=./Sample-models/
+
+			# Directory where the optional SAXS files are
+			# This string must end with a slash "/"
+			saxs_path=./Sample-SAXS-dat/
+
+			# Directory where the reference SAXS files are (in CSV format)
+			# This string must end with a slash "/"
+			ref_saxs_path=$saxs_path
+
+			# Path for the log files
+			# This string must end with a slash "/"
+			logPath=./
+
+			# Directory where the molprobity binaries are found (for the QC script only).
+			# This string must end with a slash "/"
+			molprobity_binaries='/home/MolProbity/build/bin/' 
+
+
         
         -p  Path to the directory where the perl and R scripts are.
+        
         -m  Path where the PDB model files are (with trailing '/', e.g. '-p ~/somewhere/pdb-models/')
+        
         -s  Path to the SAXS data, where it will look for files named '1AAA-saxs.dat.bz2' and such (with trailing '/', e.g. '')
             
             NOTE: all path should include the trailing '/', e.g. '-p ~/somewhere/scripts/ -p ~/somewhere/scripts/ -s /somewhere_else/SAXS-dat/' ...)
@@ -48,21 +84,21 @@ while getopts "h?c:w:l:p:m:s:" opt; do
 
         -l  Input a list of entries from a list file (see csv format below, will ignore other arguments)
 
-        The list input should have a header. The entries should look like:
-        XXXX,PEDXXXX,ensemble_amount,model_amount,model1Start,model2Start,model3Start[, ...]
-         'XXXX' is the PED entry ID
-         'ensemble_amount' is the total number of ensembles in the entry
-         'model_amount' is the total number of pdb models in the entry
+	        The list input should have a header. The entries should look like:
+	        XXXX,PEDXXXX,ensemble_amount,model_amount,model1Start,model2Start,model3Start[, ...]
+	         'XXXX' is the PED entry ID
+	         'ensemble_amount' is the total number of ensembles in the entry
+	         'model_amount' is the total number of pdb models in the entry
 
-        They may be separated by a comma, tab, space or hyphen. They are parsed by the following regex:
-          \w{4}[,\t\s-]\w{7}(([,\t\s-][0-9]+)+)
-        These symbols are later replaced by a space in the awk command.
-        So please do not include any of these in the data (e.g. 'PED-ABCD' is NOT adequate input).
+	        They may be separated by a comma, tab, space or hyphen. They are parsed by the following regex:
+	          \w{4}[,\t\s-]\w{7}(([,\t\s-][0-9]+)+)
+	        These symbols are later replaced by a space in the awk command.
+	        So please do not include any of these in the data (e.g. 'PED-ABCD' is NOT adequate input).
 
-        Please incude a final newline in the list file, this is necessary!
-        The script will attempt to include one if it is not there, by editing the list.
+	        Please incude a final newline in the list file, this is necessary!
+	        The script will attempt to include one if it is not there, by editing the list.
 
-        Log files will appear inside the entry folder for single entries.
+        Log files will appear inside the entry folder for single entries, unless a 
         An additional logfile will appear for list entries at the working directory.
         "
         exit 0
