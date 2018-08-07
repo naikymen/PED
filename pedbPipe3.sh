@@ -21,8 +21,14 @@ working_directory=`pwd`
 # ¿que era esto?
 entry_amount=1
 
-# Default behavior is to read a single entry from the arguments
+# Default behavior is to read a single entry from the arguments and load files from the working directory
 input_file=""
+all_scripts="${working_directory}/Scripts/"
+pdbs_path=./
+saxs_path=./
+ref_saxs_path=$saxs_path
+logPath=./
+molprobity_binaries='/home/MolProbity/build/bin/' 
 
 # Extension and parent location for the log files
 leeme=".log"
