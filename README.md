@@ -19,19 +19,28 @@ I have installed and run these tools in a Docker image of Ubuntu 18.04.
 
 # Examples
 
-Help section:
+### Help
 ```
 $ bash pedbPipe3.sh -h
 ```
-## Working directory
+### Input
+Two modes ar supported: list input OR single entry input. The format of the list mode is described in the help section.
+```
+$ bash pedbPipe3.sh -l list-entry-one
+
+$ bash pedbPipe3.sh 1AAA PED1AAA 3 32 1 12 22
+```
+### Working directory
 The -w flag can be passed to specify the working directory, where we expect to have read/write permissions.
 Otherwise, the default behaviour is to use the output of ```pwd```.
-## Config file
+```
+$ bash pedbPipe3.sh -w /path/to/entry_folder 1AAA PED1AAA 3 32 1 12 22
+```
+This option is not described in the configuration file, but it may be set as any other variable, as the whole configuration file is sourced (i.e. adding ```working_directory=/something/``` to the config file).
+### Config file
 The -c flag may be used to specify a configuration file. Default behaviour is described in the help section.
 ```
 $ bash pedbPipe3.sh -w /path/to/entry_folder -c /path/to/pedb.cfg -l list-entry-one
-
-$ bash pedbPipe3.sh -w /path/to/entry_folder -c /path/to/pedb.cfg 1AAA PED1AAA 3 32 1 12 22
 ```
 
 
