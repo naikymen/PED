@@ -8,16 +8,16 @@
   # cd /home/PED-DB3/
   # bash pedbPipe3.sh -p /home/PED-DB3/Scripts/ -m /home/PED-DB3/PDB-all-models/ -s /home/PED-DB3/SAXS-dat/ -l list-entry-one
 
-# Initialize our own variables:
-# These can be overwritten by using command-line options.
+# Initialize our own variables by sourcing from a default configuration file in the working directory
+# It can be overwritten by using command line options.
+# Individual values can also be overwritten by using the other command-line options.
   # Eventually the server administrator should put whatever is appropiate herein.
-input_file=""
+. pedbpipe3.cfg
+
+# ?
 entry_amount=1
-all_scripts=~/Projects/Chemes/IDPfun/PED-DB3/Scripts/
-pdbs_path=~/Projects/Chemes/IDPfun/PED-DB3/PDB-all-models/
-saxs_path=~/Projects/Chemes/IDPfun/PED-DB3/SAXS-dat/
-ref_saxs_path=$saxs_path
-logPath=`pwd`
+
+# Extension for the log files
 leeme=".log"
 
 # Parse options with getopts
@@ -25,12 +25,14 @@ leeme=".log"
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
 
 # Parse command-line options
-while getopts "h?l:p:m:s:" opt; do
+while getopts "h?c:w:l:p:m:s:" opt; do
     case "$opt" in
     h|\?)
         printf "usage: pedbPipe [-l <entry list>] XXXX PEDXXXX ensemble_# ensemble1 ensemble2 ensemble3 ...
         
         -h  Show this help and exit.
+
+        -c  Load options from a configuration file.
         
         -p  Path to the directory where the perl and R scripts are.
         -m  Path where the PDB model files are (with trailing '/', e.g. '-p ~/somewhere/pdb-models/')
@@ -38,8 +40,13 @@ while getopts "h?l:p:m:s:" opt; do
             
             NOTE: all path should include the trailing '/', e.g. '-p ~/somewhere/scripts/ -p ~/somewhere/scripts/ -s /somewhere_else/SAXS-dat/' ...)
 
-        -l  Input a list of entries from a list file (see csv format below, will ignore other arguments)
+        The script requires the following input:
+          1)  Entry information (ID and the indexes of each ensemble [subset of models] within the PDB file)
+              Provided as a list of entries ina  file, or as arguements for a single entry only.
+          2)  A PDB file with all of the models
+          3)  An OPTIONAL sax.dat file
 
+        -l  Input a list of entries from a list file (see csv format below, will ignore other arguments)
 
         The list input should have a header. The entries should look like:
         XXXX,PEDXXXX,ensemble_amount,model_amount,model1Start,model2Start,model3Start[, ...]
@@ -60,6 +67,12 @@ while getopts "h?l:p:m:s:" opt; do
         "
         exit 0
         ;;
+    c)  config_file=$OPTARG
+        . "$config_file"
+    ;;
+    w)  working_directory=$OPTARG
+        cd "$working_directory"
+    ;;
     l)  input_file=$OPTARG
         printf "List mode ON!"
         # Add a final newline if it is not there

@@ -8,41 +8,36 @@
   # cd /home/PED-DB3/
   # bash pedbQC3.sh -p /home/PED-DB3/Scripts/ -m /home/PED-DB3/PDB-all-models/ 1AAB PED1AAB 2 5 1 3
 
-# Initialize our own variables:
-# These can be overwritten by using command-line options.
+# Initialize our own variables by sourcing from a default configuration file in the working directory
+# It can be overwritten by using command line options.
+# Individual values can also be overwritten by using the other command-line options.
   # Eventually the server administrator should put whatever is appropiate herein.
-input_file=""
-entry_amount=1
-all_scripts=~/Projects/Chemes/IDPfun/PED-DB2/Scripts/
-pdbs_path=~/Projects/Chemes/IDPfun/PED-DB2/PDB-all-models/
-logPath=`pwd`
+. pedbpipe3.cfg
+
+# Extension for the log files
 leeme=".QC.log"
-molprobity_binaries='/home/MolProbity/build/bin/'
 
 # Parse options
 # A POSIX variable
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
 
 # Parse command-line options
-while getopts "h?l:p:m:b:" opt; do
+while getopts "h?c:w:l:p:m:b:" opt; do
     case "$opt" in
     h|\?)
         echo "usage: pedbPipe [-l <entry list>] XXXX PEDXXXX ensemble_# ensemble1 ensemble2 ensemble3 ...
+        -h show this help and exit.
+        -c load a configuration file
+        -w specify the working directory (i.e. the folder that contains the input data)
         -l input a list of entries from a list file (see csv format below, will ignore other arguments)
-        -h show this help
         -p path for the perl scripts (with trailing '/', e.g. '-p ~/somewhere/scripts/')
         -m path where the PDB model files are (with trailing '/', e.g. '-p ~/somewhere/pdb-models/')
-        -b path to the molprobity binaries:
-            molprobity.cablam
-            molprobity.cbetadev
-            molprobity.clashscore
-            molprobity.molprobity
-            molprobity.omegalyze
-            molprobity.probe
-            molprobity.ramalyze
-            molprobity.reduce
-            molprobity.rotalyze
-            molprobity.suitename
+        -b path to the molprobity binaries: molprobity.cablam, molprobity.cbetadev, molprobity.clashscore, molprobity.molprobity, molprobity.omegalyze, molprobity.probe, molprobity.ramalyze, molprobity.reduce, molprobity.rotalyze, molprobity.suitename
+
+        The script requires the following input:
+          1)  Entry information (ID and the indexes of each ensemble [subset of models] within the PDB file)
+              Provided as a list of entries ina  file, or as arguements for a single entry only.
+          2)  A PDB file with all of the models
 
         The list input should have a header. The entries should look like:
         XXXX,PEDXXXX,ensemble_amount,model_amount,model1Start,model2Start,model3Start[, ...]
@@ -63,6 +58,12 @@ while getopts "h?l:p:m:b:" opt; do
         "
         exit 0
         ;;
+    c)  config_file=$OPTARG
+        . "$config_file"
+    ;;
+    w)  working_directory=$OPTARG
+        cd "$working_directory"
+    ;;
     l)  input_file=$OPTARG
         
         # Add a final newline if it is not there
