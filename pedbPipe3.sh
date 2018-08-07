@@ -162,19 +162,20 @@ done
 shift $((OPTIND-1))
 [ "${1:-}" = "--" ] && shift
 
+# Some feedback
+a="$@"
+printf "
+\nYour input arguments:
+ input_file: $input_file
+ input_arguments: $a
+ all_scripts: $all_scripts
+ pdbs_path: $pdbs_path
+ saxs_path: $saxs_path
+ ref_saxs_path: $ref_saxs_path\n"
 
 # Two functions are defined here: saxs() and pedb()
 # pedb() is called at the end of the script, and performs all non-SAXS processing.
 # saxs() is called at the end of pedb() and will process everything related to SAXS, if the data is available.
-
-printf "
-\nYour input arguments:
-  $input_file
-  $all_scripts
-  $pdbs_path
-  $saxs_path
-  $ref_saxs_path\n"
-
 
 
 function saxs {
