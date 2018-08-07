@@ -96,7 +96,7 @@ while getopts "h?c:w:l:p:m:s:n" opt; do
         
         -s  Path to the SAXS data, where it will look for files named '1AAA-saxs.dat.bz2' and such.
             
-            NOTE: all paths should include the trailing '/', e.g. '-p ~/somewhere/scripts/ -p ~/somewhere/scripts/ -s /somewhere_else/SAXS-dat/' ...)
+            NOTE: all paths should include the trailing '/', e.g. '-p ~/somewhere/scripts/ -m ~/somewhere/models/ -s /somewhere_else/SAXS-dat/' ...)
 
         The script requires the following input:
           1)  Entry information (ID and the indexes of each ensemble [subset of models] within the PDB file)
