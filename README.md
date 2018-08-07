@@ -42,5 +42,6 @@ The -c flag may be used to specify a configuration file. Default behaviour is de
 ```
 $ bash pedbPipe3.sh -w /path/to/entry_folder -c /path/to/pedb.cfg -l list-entry-one
 ```
-
+### Other options
+They are described in the help section. Using options flags will override the values in the configuration file (i.e. paths to executables or input files).
 
