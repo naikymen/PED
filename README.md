@@ -21,7 +21,7 @@ I have installed and run these tools in a Docker image of Ubuntu 18.04.
 ```
 $ bash pedbPipe3.sh -h
 
-$ bash pedbPipe3.sh -p ./Scripts/ -m ./Sample-models/ -s ./Sample-SAXS-dat/ -l list-entry-one
+$ bash pedbPipe3.sh -c pedb.cfg -l list-entry-one
 
-$ bash pedbPipe3.sh -p ./Scripts/ -m ./Sample-models/ -s ./Sample-SAXS-dat/ 1AAA PED1AAA 3 32 1 12 22
+$ bash pedbPipe3.sh -c pedb.cfg 1AAA PED1AAA 3 32 1 12 22
 ```
