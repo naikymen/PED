@@ -39,21 +39,23 @@ while getopts "h?c:w:l:p:m:s:n" opt; do
         
         -h  Show this help and exit.
 
-        -n 	Dry run.
+        -n 	Dry run, output only the input arguments.
+
+        -w  Set the working directory.
 
         -c  Load options from a configuration file.
 
 			# Directory where the auxiliary scripts are.
 			# This string must end with a slash "/"
-			all_scripts='./Scripts/'
+			all_scripts='~/IDPfun/PED/Scripts/'
 
 			# Directory where the PDB files are
 			# This string must end with a slash "/"
-			pdbs_path=./Sample-models/
+			pdbs_path=./
 
 			# Directory where the optional SAXS files are
 			# This string must end with a slash "/"
-			saxs_path=./Sample-SAXS-dat/
+			saxs_path=./
 
 			# Directory where the reference SAXS files are (in CSV format)
 			# This string must end with a slash "/"
@@ -67,7 +69,8 @@ while getopts "h?c:w:l:p:m:s:n" opt; do
 			# This string must end with a slash "/"
 			molprobity_binaries='/home/MolProbity/build/bin/' 
 
-
+			# Note: relative paths such as './something/' will be interpreted according to the working directory
+			# The default is to use the output from pwd, but this can be overriden by using the -w flag.
         
         -p  Path to the directory where the perl and R scripts are.
         
