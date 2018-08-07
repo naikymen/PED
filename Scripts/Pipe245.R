@@ -13,7 +13,7 @@ for(ensemble in unique(rg$ensemble)){
   
   ## grafica Rg necesita Rg.list
   #mv rgdist-ens${nue}.jpg ${dos}_${nue}-Rgdist.jpg
-  jpeg(paste(rg$pedxxxx[1],'_rgdist-ens', "_", ensemble, '-Rgdist.jpg', sep = ''), width=1250, height=400);
+  jpeg(paste('Rg/',rg$pedxxxx[1],'_rgdist-ens', "_", ensemble, '-Rgdist.jpg', sep = ''), width=1250, height=400);
   rgSub <- rg[rg$ensemble == ensemble,];
   
   hist(rgSub$Rg, prob=T, main='', xlab='', ylab='');

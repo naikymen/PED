@@ -20,14 +20,14 @@ if(test){
 }
 # 
 
-# Read input arguments: (1) autorg.out (2) saxs.dat ...
+# Read input arguments: (1) autorg.out (2) saxs.dat (3) reference_path/ (4) datgnom.SJ.file (5) XXXX
 args <- commandArgs(trailingOnly = TRUE)
 
 # trailingOnly	logical. Should only arguments after --args be returned?
 # args <- strsplit("PED1AAB-autorg.out 1AAB-saxs.dat ../SAXS-dat/ 1AAB", split = ' ')[[1]]
 
 exec = FALSE
-if(length(args) != 5){
+if(length(args) != 6){
   stop("Incorrect number of arguments! Please provide (1) autorg file (2) SAXS file (3) Path to the reference SAXS data (4) The PEDB entry ID (e.g. 1AAB)")
 } else {
   exec = TRUE
@@ -35,8 +35,6 @@ if(length(args) != 5){
 }
 
 if(exec){
-  # Entry ID: XXXX
-  entry_name <- args[5]  
   
   # Load the autorg output
   autorg_file <- args[1]
@@ -60,8 +58,11 @@ if(exec){
   dis <- read.csv(dis_file, sep='\t', head=F)
   
   # datgnom Output
-  datgnom_file <- args[4]
-  pr_file <- paste(entry_name,'-saxs.dat.rPr.datgnom',sep = '')
+  datgnom_SJ_file <- args[4]
+  datgnom_rPr_file <- args[5]
+  
+  # Entry ID: XXXX
+  entry_name <- args[6]  
 
   ## Normalized Kratky plots
   if(TRUE){
@@ -119,8 +120,8 @@ if(exec){
   
   ## Scattering Plot
   if(T){
-    datgnom_file <- datgnom_file
-    sj <- fread(datgnom_file, header = F, col.names = c('S', 'J', 'EXP_ERROR', 'J_REG', 'I_REG'))
+    datgnom_SJ_file <- datgnom_SJ_file
+    sj <- fread(datgnom_SJ_file, header = F, col.names = c('S', 'J', 'EXP_ERROR', 'J_REG', 'I_REG'))
     plot_name <- paste(entry_name, '-scatteringPlot.png', sep = '')
     # Reference: https://www.embl-hamburg.de/biosaxs/manuals/gnom.html#runtime
     CairoPNG(file = plot_name, width = 522, height = 522,
@@ -147,8 +148,8 @@ if(exec){
   
   ## r vs P(r) Plot
   if(T){
-    pr_file <- pr_file
-    rPr_data <- fread(pr_file, header=TRUE, col.names = c('r', 'Pr', 'Error'))
+    datgnom_rPr_file <- datgnom_rPr_file
+    rPr_data <- fread(datgnom_rPr_file, header=TRUE, col.names = c('r', 'Pr', 'Error'))
     plot_name <- paste(entry_name, '-rPrPlot.png', sep = '')
     
     CairoPNG(file = plot_name, width = 522, height = 522,

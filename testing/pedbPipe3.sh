@@ -338,8 +338,8 @@ function pedb {
   perl ${all_scripts}Pipe1-batchCrysol-2018.pl > /dev/null
   printf "Pipe 1 done!\n"
 
-  #mv pdb.list ../
-  mv rg.list ../Rg/
+  mv pdb.list ../
+  mv rg.list ../
 
   # Cleanup Crysol output
   mv log.list ../Crysol/
