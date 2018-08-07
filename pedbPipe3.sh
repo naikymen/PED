@@ -11,11 +11,12 @@
 
 working_directory=`pwd`
 
-# Initialize our own variables by sourcing from a default configuration file in the working directory
-# It can be overwritten by using command line options.
+# Initialize our own variables by sourcing from a configuration file.
+# This config file is specified with the -c flag
 # Individual values can also be overwritten by using the other command-line options.
-  # Eventually the server administrator should put whatever is appropiate herein.
-. pedbpipe3.cfg
+# Eventually the server administrator should put whatever is appropiate herein.
+# The following line may be used to source a default configuration file, uncomment to enable.
+#  . pedb.cfg
 
 # ¿que era esto?
 entry_amount=1
