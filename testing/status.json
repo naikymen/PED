@@ -9,15 +9,25 @@
   },
 
   "qc_result": {
+    "status": "",
     "pdb_format": "",
     "ramalyse": "",
     "cablam": "",
     "cbetadev": ""
   },
 
-  "log": {
-    "currentStage": "",
-    "currentStatus": "",
+  "pipe_result": {
+    "status": "",
+    "pdb": "",
+    "saxs": "",
+    "cleanup": "",
+    "": ""
+  },
+
+  "status_log": {
+    "stage": "",
+    "status": "",
+    "errors": "",
     "message": "",
   }
 }

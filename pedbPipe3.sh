@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Stop the script if errors arise
+set -e
+
 # A simple test: bash pedbPipe.sh 1AAB PED1AAB 2 5 1 3
 # A simple test: bash pedbPipe.sh 1AAA PED1AAA 3 32 1 12 22
 
@@ -9,6 +12,7 @@
   # cd /home/PED-DB3/
   # bash pedbPipe3.sh -p /home/PED-DB3/Scripts/ -m /home/PED-DB3/PDB-all-models/ -s /home/PED-DB3/SAXS-dat/ -l list-entry-one
 
+# Save the execution directory (can be overriden later on with options)
 working_directory=`pwd`
 
 # Initialize our own variables by sourcing from a configuration file.
@@ -258,7 +262,6 @@ function pedb {
   printf "\n\nExecution started, checking arguments... " | tee -a $logName
 
   # Scan so see if the input arguments look OK
-
   apat="\w{4}\s\w{7}((\s[0-9]+)+)"
   asd="$@"
 
@@ -360,10 +363,8 @@ function pedb {
   perl ${all_scripts}Pipe1-batchCrysol-2018.pl > /dev/null
   printf "Pipe 1 done!\n"
 
-  #mv pdb.list ../
+  # Cleanup output
   mv rg.list ../Rg/
-
-  # Cleanup Crysol output
   mv log.list ../Crysol/
   tar -cz --remove-files -f ../Crysol/${pedxxxx}.alm.tar.gz ./*.alm
   tar -cz --remove-files -f ../Crysol/${pedxxxx}.int.tar.gz ./*.int
@@ -384,9 +385,6 @@ function pedb {
   cd "$working_directory"
   saxs $xxxx $pedxxxx
   printf "Pipe6 done!\n"
-
-  #To-do:
-    # Limpieza para que no queden archivos zombie
 
   # Tar all of the .pdb files, and remove the original files
   tar -cz --remove-files -f ${pedxxxx}/${pedxxxx}-pdb.tar.gz ./${pedxxxx}/ensembles/*.pdb
