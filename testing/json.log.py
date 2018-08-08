@@ -4,19 +4,24 @@ import sys
 with open("status.json", "r") as read_file:
     data = json.load(read_file)
 
-# print(json.dumps(data, sort_keys=True, indent=4))
+print(json.dumps(data, sort_keys=True, indent=4))
 
-# print(data["PDBfile"])
+#print(data["PDBfile"])
 
-field = sys.argv[1]
+category = sys.argv[1]
 
-value = sys.argv[2]
+field = sys.argv[2]
 
-data[field] = value
+value = sys.argv[3]
 
-# print(data["PDBfile"])
+data[category][field] = value
 
-# print(json.dumps(data, sort_keys=True, indent=4))
+#print(data["PDBfile"])
+
+#print(json.dumps(data, sort_keys=True, indent=4))
+#print(category)
+#print(field)
+#print(value)
 
 with open('status.json', 'w') as outfile:
     json.dump(data, outfile)

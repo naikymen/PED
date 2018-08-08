@@ -1,11 +1,11 @@
 {
   "input": {
     "entry": "",  
-    "ensembleAmount": ,
-    "conformerAmount": ,
+    "ensembleAmount": 0,
+    "conformerAmount": 0,
     "ensembleStarts": [],
     "PDBfile": "",
-    "SAXSfile": "",
+    "SAXSfile": ""
   },
 
   "qc_result": {
@@ -20,14 +20,13 @@
     "status": "",
     "pdb": "",
     "saxs": "",
-    "cleanup": "",
-    "": ""
+    "cleanup": ""
   },
 
   "status_log": {
     "stage": "",
     "status": "",
     "errors": "",
-    "message": "",
+    "message": ""
   }
 }
