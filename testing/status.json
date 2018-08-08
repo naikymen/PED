@@ -1,23 +1,23 @@
 {
   "input": {
     "entry": "",  
-    "ensembleAmount": 0,
-    "conformerAmount": 0,
-    "ensembleStarts": [0],
+    "ensembleAmount": ,
+    "conformerAmount": ,
+    "ensembleStarts": [],
     "PDBfile": "",
     "SAXSfile": "",
   },
 
   "qc_result": {
-    "a": "",
-    "b": "",
-    "c": "",
-    "d": ""
+    "pdb_format": "",
+    "ramalyse": "",
+    "cablam": "",
+    "cbetadev": ""
   },
 
   "log": {
-    "currentStatus": "",
     "currentStage": "",
+    "currentStatus": "",
     "message": "",
   }
 }
