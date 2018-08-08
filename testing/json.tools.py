@@ -9,6 +9,7 @@ print(json.dumps('\\'))
 
 print(json.dumps({"c": 0, "b": 0, "a": 0}, sort_keys=True))
 
+
 from io import StringIO
 io = StringIO()
 json.dump(['streaming API'], io)
@@ -75,4 +76,4 @@ json_string = """
 with open("sample.json", "r") as read_file:
     data = json.load(read_file)
 
-print(json.dumps(data, sort_keys=True, indent=4)) 
+print(json.dumps(data, sort_keys=True, indent=4))

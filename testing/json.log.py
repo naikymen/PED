@@ -4,7 +4,7 @@ import sys
 with open("status.json", "r") as read_file:
     data = json.load(read_file)
 
-print(json.dumps(data, sort_keys=True, indent=4))
+# print(json.dumps(data, sort_keys=True, indent=4))
 
 # print(data["PDBfile"])
 
@@ -16,7 +16,7 @@ data[field] = value
 
 # print(data["PDBfile"])
 
-print(json.dumps(data, sort_keys=True, indent=4))
+# print(json.dumps(data, sort_keys=True, indent=4))
 
-print(field)
-print(value)
+with open('status.json', 'w') as outfile:
+    json.dump(data, outfile)

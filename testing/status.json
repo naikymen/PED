@@ -1,34 +1,23 @@
 {
-  "entry": "XXXX",
-  "ensembleAmount": 2,
-  "conformerAmount": 10,
-  "ensembleStarts": [1,6],
-  "PDBfile": "XXXX.pdb",
-  "SAXSfile": "XXXX.dat",
-  "QCresult": {
-    "a": "21 2nd Street",
-    "b": "New York",
-    "c": "NY",
-    "d": "10021-3100"
+  "input": {
+    "entry": "",  
+    "ensembleAmount": 0,
+    "conformerAmount": 0,
+    "ensembleStarts": [0],
+    "PDBfile": "",
+    "SAXSfile": "",
   },
+
+  "qc_result": {
+    "a": "",
+    "b": "",
+    "c": "",
+    "d": ""
+  },
+
   "log": {
-  	  "runStatus": [
-    {
-      "stage": "pedbQC",
-      "message": "Ok"
-    },
-    {
-      "stage": "pedbQC",
-      "message": "Ok"
-    },
-    {
-      "stage": "pedbQC",
-      "message": "Ok"
-    }
-  ],
-  "currentStatus": "Ok",
-  "currentStage": "Pipe",
-  "message": "None"
+    "currentStatus": "",
+    "currentStage": "",
+    "message": "",
   }
 }
- 
