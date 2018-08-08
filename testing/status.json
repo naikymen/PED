@@ -10,16 +10,17 @@
 
   "qc_result": {
     "status": "",
-    "pdb_format": "",
+    "format_check": "",
     "ramalyse": "",
     "cablam": "",
-    "cbetadev": ""
+    "cbetadev": "",
+    "cleanup": ""
   },
 
   "pipe_result": {
     "status": "",
-    "pdb": "",
-    "saxs": "",
+    "pedb_function": "",
+    "saxs_function": "",
     "cleanup": ""
   },
 
