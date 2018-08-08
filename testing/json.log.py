@@ -1,14 +1,22 @@
 import json
+import sys
 
 with open("status.json", "r") as read_file:
     data = json.load(read_file)
 
-print(json.dumps(data, sort_keys=True, indent=4)) 
+print(json.dumps(data, sort_keys=True, indent=4))
 
-print(data["PDBfile"])
+# print(data["PDBfile"])
 
-data["PDBfile"]="asd"
+field = sys.argv[1]
 
-print(data["PDBfile"])
+value = sys.argv[2]
 
-print(json.dumps(data, sort_keys=True, indent=4)) 
+data[field] = value
+
+# print(data["PDBfile"])
+
+print(json.dumps(data, sort_keys=True, indent=4))
+
+print(field)
+print(value)
