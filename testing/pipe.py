@@ -3,6 +3,9 @@ import re
 import os
 import subprocess
 
+# Test command:
+# rm -rf PED1AAA/; cp ../pipe.py pipe.py; python3 pipe.py 1AAA PED1AAA 3 20 1 5 15
+
 usage = "usage: pedbPipe [-l <entry list>] XXXX PEDXXXX ensemble# conformer# ensemble1 ensemble2 ensemble3 ..."
 parser = OptionParser(usage)
 
@@ -36,17 +39,28 @@ parser.add_option("-n", "--dry", action="store_true",
 
 (options, args) = parser.parse_args()
 
+
+class InputError(Exception):
+    """Exception raised for errors in the input.
+
+    Attributes:
+        expression -- input expression in which the error occurred
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+
+
 try:
     # Check if the input seems right
-    pat = re.compile(r'\w{4}\s\w{7}((\s[0-9]+)+)')
+    pat = re.compile(r'^\w{4}\s\w{7}((\s[0-9]+)+)$')
     arguments = ' '.join(args)
 
     if re.match(pat, arguments):
         print('Happy1')
     else:
-        print('Unhappy')
-
-    print(arguments)
+        raise InputError('\nInput arguments do not match the expected pattern\n')
 
     xxxx = args[0]
     pedxxxx = args[1]
@@ -57,20 +71,25 @@ try:
     if indices.__len__() == int(ensembles):
         print("Happy2")
     else:
-        print('Unhappy')
+        raise InputError('\nError in input arguments - ensemble# is %s while %s indices were provided\n' % (ensembles,indices.__len__()))
 
     subprocess.run(['mkdir', '-p', './%s/ensembles' % pedxxxx])
     subprocess.run(['mkdir', '-p', './%s/Crysol' % pedxxxx])
     subprocess.run(['mkdir', '-p', './%s/Pymol' % pedxxxx])
     subprocess.run(['mkdir', '-p', './%s/Rg' % pedxxxx])
-except Exception as e:
-    print(e)
 
-try:
     if not os.path.exists("./%s/%s-all.pdb" % (pedxxxx, xxxx)):
-        p = subprocess.run('bzip2 -fckd %s%s-all.pdb.bz2 > ./%s/%s-all.pdb' % ( options.pdb, xxxx, pedxxxx, xxxx),
-            shell = True, check = True, capture_output = True)
-    print("Happy3")
+        p = subprocess.run(
+            'bzip2 -fckd %s%s-all.pdb.bz2 > ./%s/%s-all.pdb'
+            % (options.pdb, xxxx, pedxxxx, xxxx),
+            shell=True, check=True, capture_output=True)
+
 except subprocess.CalledProcessError as e:
-    print('Unhappy3')
+    print('Subprocess error:')
     print(e.stderr.decode('UTF-8'))
+    raise
+
+except InputError as e:
+    # I use the bare except because i do not know
+    print("Unexpected error in stage pre-prcessing stage:", e.message)
+    raise

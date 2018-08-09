@@ -39,17 +39,20 @@ parser.add_option("-n", "--dry", action="store_true",
 
 (options, args) = parser.parse_args()
 
+
+# Custom exception class raised for errors in the input
+class InputError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
 try:
     # Check if the input seems right
-    pat = re.compile(r'\w{4}\s\w{7}((\s[0-9]+)+)')
+    pat = re.compile(r'^\w{4}\s\w{7}((\s[0-9]+)+)$')
     arguments = ' '.join(args)
 
-    if re.match(pat, arguments):
-        print('Happy1')
-    else:
-        print('Unhappy')
-
-    print(arguments)
+    if not re.match(pat, arguments):
+        raise InputError('\nInput arguments do not match the expected pattern\n')
 
     xxxx = args[0]
     pedxxxx = args[1]
@@ -57,10 +60,8 @@ try:
     conformers = args[3]
     indices = args[4:]
 
-    if indices.__len__() == int(ensembles):
-        print("Happy2")
-    else:
-        print('Unhappy')
+    if not indices.__len__() == int(ensembles):
+        raise InputError('\nError in input arguments - ensemble# is %s while %s indices were provided\n' % (ensembles,indices.__len__()))
 
     subprocess.run(['mkdir', '-p', './%s/ensembles' % pedxxxx])
     subprocess.run(['mkdir', '-p', './%s/Crysol' % pedxxxx])
@@ -74,10 +75,11 @@ try:
             shell=True, check=True, capture_output=True)
 
 except subprocess.CalledProcessError as e:
-    print('Unhappy3')
+    print('Subprocess error:')
     print(e.stderr.decode('UTF-8'))
+    raise
 
-except:
+except InputError as e:
     # I use the bare except because i do not know
-    print("Unexpected error in stage pre-prcessing stage")
+    print("Unexpected error in stage pre-prcessing stage:", e.message)
     raise
