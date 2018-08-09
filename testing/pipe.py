@@ -3,9 +3,6 @@ import re
 import os
 import subprocess
 
-# Test command:
-# rm -rf PED1AAA/; cp ../pipe.py pipe.py; python3 pipe.py 1AAA PED1AAA 3 20 1 5 15
-
 usage = "usage: pedbPipe [-l <entry list>] XXXX PEDXXXX ensemble# conformer# ensemble1 ensemble2 ensemble3 ..."
 parser = OptionParser(usage)
 
@@ -71,11 +68,9 @@ except Exception as e:
 
 try:
     if not os.path.exists("./%s/%s-all.pdb" % (pedxxxx, xxxx)):
-        p = subprocess.run(
-            'bzip2 -fckd %s%s-all.pdb.bz2 > ./%s/%s-all.pdb'
-            % (options.pdb, xxxx, pedxxxx, xxxx),
-            shell=True, check=True, capture_output=True)
-
+        p = subprocess.run('bzip2 -fckd %s%s-all.pdb.bz2 > ./%s/%s-all.pdb' % ( options.pdb, xxxx, pedxxxx, xxxx),
+            shell = True, check = True, capture_output = True)
+    print("Happy3")
 except subprocess.CalledProcessError as e:
     print('Unhappy3')
     print(e.stderr.decode('UTF-8'))
