@@ -193,6 +193,9 @@ function saxs {
   if [ -f ${saxs_path}${xxxx}-saxs.dat.bz2 ]; then
 
     printf "\n SAXS data found for entry ${xxxx}, processing...\n" | tee -a $logName
+    python ${all_scripts}json.log.py pipe_result saxs_function "SAXS data file found"
+    python ${all_scripts}json.log.py input SAXSfile "${saxs_path}${xxxx}-saxs.dat.bz2"
+
 
     mkdir -p SAXS-${pedxxxx}
 
@@ -206,6 +209,7 @@ function saxs {
     bzip2 -fckd ${saxs_path}${xxxx}-saxs.dat.bz2 | awk '/^[\ \t]*(([0-9]|\.|-|\+|e|E)+)[\ \t]+(([0-9]|\.|-|\+|e|E)+)[\ \t]+(([0-9]|\.|-|\+|e|E)+)[\ \t\r]$/{print}' > SAXS-${pedxxxx}/${xxxx}-saxs.dat
 
     printf " Running autorg\n"
+    python ${all_scripts}json.log.py pipe_result saxs_function "Running autorg"
     autorg SAXS-${pedxxxx}/${xxxx}-saxs.dat -f csv -o SAXS-${pedxxxx}/${pedxxxx}-autorg.out
     
 
@@ -215,9 +219,11 @@ function saxs {
     rg=`cat SAXS-${pedxxxx}/${pedxxxx}-autorg.out | awk -F ',' '/.dat/{print $2}'`
     
     printf " Running datgnom\n"
+    python ${all_scripts}json.log.py pipe_result saxs_function "Running datgnom"
     datgnom -r $rg -o SAXS-${pedxxxx}/${xxxx}-saxs.dat.datgnom SAXS-${pedxxxx}/${xxxx}-saxs.dat > /dev/null
 
     # Extract data from the datgnom output file
+    python ${all_scripts}json.log.py pipe_result saxs_function "Pre-rocessing datgnom output"
       ## Read lines after the header, including it, with: /R.+P\(R\).+ERROR/
       ## Empty lines and lines ensuing /####/ are filtered out (including the line which contains the pattern).
     cat SAXS-${pedxxxx}/${xxxx}-saxs.dat.datgnom | awk '/####/{show=0} /^\ *$/{next} /R.+P\(R\).+ERROR/{show=1} show;' > SAXS-${pedxxxx}/${xxxx}-saxs.dat.rPr.datgnom
@@ -236,15 +242,20 @@ function saxs {
 
     # Make and save all plots as PNG images
       # Guinier and Normalized Kratky Plots, rPr and Scattering
+      # It reads the following arguments:
+      # PEDXXXX-autorg.out XXXX-saxs.dat /path/to/reference/saxs/ XXXX-saxs.dat.SJ.datgnom.csv XXXX
     printf " Running Pipe6.R - making plots... "
-    # It reads the following arguments:
-    # PEDXXXX-autorg.out XXXX-saxs.dat /path/to/reference/saxs/ XXXX-saxs.dat.SJ.datgnom.csv XXXX
+    python ${all_scripts}json.log.py pipe_result saxs_function "Runing Pipe6 - R SAXS plots"
     Rscript ${all_scripts}Pipe6-SAXS.R SAXS-${pedxxxx}/${pedxxxx}-autorg.out SAXS-${pedxxxx}/${xxxx}-saxs.dat ${ref_saxs_path} SAXS-${pedxxxx}/${xxxx}-saxs.dat.SJ.datgnom.csv SAXS-${pedxxxx}/${xxxx}-saxs.dat.rPr.datgnom ${xxxx} > /dev/null
     
     printf "Done!\n Find the output files in the SAXS folder for the entry (SAXS-${pedxxxx}).\n" | tee -a $logName
+    python ${all_scripts}json.log.py pipe_result saxs_function "Execution complete"
+
 
   else
     printf " No SAXS data found for entry ${xxxx}.\n" | tee -a $logName
+    python ${all_scripts}json.log.py pipe_result saxs_function "SAXS data file not found"
+    python ${all_scripts}json.log.py input SAXSfile "${saxs_path}${xxxx}-saxs.dat.bz2"
   fi
 }
 
@@ -265,6 +276,7 @@ function pedb {
   printf "\n\nExecution started, checking arguments... " | tee -a $logName
 
   # Scan so see if the input arguments look OK
+  python ${all_scripts}json.log.py pipe_result stage "Checking arguments"
   apat="\w{4}\s\w{7}((\s[0-9]+)+)"
   asd="$@"
 
@@ -308,7 +320,8 @@ function pedb {
 
 
   # Proceed with pre-processing
-  python ${all_scripts}json.log.py pipe_result stage "data pre-processing"
+  python ${all_scripts}json.log.py pipe_result stage "Data processing"
+  python ${all_scripts}json.log.py pipe_result pedb_function "PDB file pre-processing"
 
   # Make folders for the entry
   mkdir -p ./${pedxxxx}/ensembles
@@ -377,18 +390,18 @@ function pedb {
   fi
 
 
+
   # Proceed with analysis
 
   # Run Pipe1
-  python ${all_scripts}json.log.py pipe_result stage "pipe1 data analysis"
-
+  python ${all_scripts}json.log.py pipe_result pedb_function "pipe1 data analysis"
   cd ./${pedxxxx}/ensembles
   printf "\nRunning Pipe 1 - Crysol... "
   perl ${all_scripts}Pipe1-batchCrysol-2018.pl > /dev/null
   printf "Pipe 1 done!\n"
 
   # Cleanup output
-  python ${all_scripts}json.log.py pipe_result stage "pipe1 output cleanup"
+  python ${all_scripts}json.log.py pipe_result pedb_function "pipe1 output cleanup"
   mv rg.list ../Rg/
   mv log.list ../Crysol/
   tar -cz --remove-files -f ../Crysol/${pedxxxx}.alm.tar.gz ./*.alm
@@ -397,8 +410,7 @@ function pedb {
 
 
   # Run Pipe2, Pipe4, Pipe5 (condensed version)
-  python ${all_scripts}json.log.py pipe_result stage "pipe245 data analysis"
-
+  python ${all_scripts}json.log.py pipe_result pedb_function "pipe245 data analysis"
   cd ..  # move tho the entry folder, e.g. "PED1AAB" (i.e. one level above)
   printf "\nRunning Pipe245 - Plots and PyMol figures... "
   Rscript ${all_scripts}Pipe245.R > /dev/null
@@ -407,7 +419,6 @@ function pedb {
 
   # Process SAXS data
   python ${all_scripts}json.log.py pipe_result stage "SAXS data analysis"
-  
   printf "\nRunning Pipe6 - SAXS data plots... "
   cd "$working_directory"
   saxs $xxxx $pedxxxx
@@ -415,7 +426,6 @@ function pedb {
 
   # Tar all of the .pdb files, and remove the original files
   python ${all_scripts}json.log.py pipe_result stage "Final cleanup"
-
   tar -cz --remove-files -f ${pedxxxx}/${pedxxxx}-pdb.tar.gz ./${pedxxxx}/ensembles/*.pdb
 
   python ${all_scripts}json.log.py pipe_result stage "Processing complete"
