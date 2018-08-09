@@ -71,27 +71,27 @@ while getopts "h?c:w:l:p:m:s:n" opt; do
         -c  Load options from a configuration file.
 
 			# Directory where the auxiliary scripts are.
-			# This string must end with a slash "/"
+			# This string must end with a slash '/'
 			all_scripts='~/IDPfun/PED/Scripts/'
 
 			# Directory where the PDB files are
-			# This string must end with a slash "/"
+			# This string must end with a slash '/'
 			pdbs_path=./
 
 			# Directory where the optional SAXS files are
-			# This string must end with a slash "/"
+			# This string must end with a slash '/'
 			saxs_path=./
 
 			# Directory where the reference SAXS files are (in CSV format)
-			# This string must end with a slash "/"
+			# This string must end with a slash '/'
 			ref_saxs_path=$saxs_path
 
 			# Path for the log files
-			# This string must end with a slash "/"
+			# This string must end with a slash '/'
 			logPath=./
 
 			# Directory where the molprobity binaries are found (for the QC script only).
-			# This string must end with a slash "/"
+			# This string must end with a slash '/'
 			molprobity_binaries='/home/MolProbity/build/bin/' 
 
 			# Note: relative paths such as './something/' will be interpreted according to the working directory
