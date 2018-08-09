@@ -1,5 +1,8 @@
 #!/bin/bash
 
+python ${all_scripts}json.log.py status_log status started
+python ${all_scripts}json.log.py status_log stage pipeline
+
 # Stop the script if errors arise
 set -e
 
@@ -15,7 +18,7 @@ set -e
 # Save the execution directory (can be overriden later on with options)
 working_directory=`pwd`
 
-# Initialize our own variables by sourcing from a configuration file.
+# Initialize our town variables by sourcing from a configuration file.
 # This config file is specified with the -c flag
 # Individual values can also be overwritten by using the other command-line options.
 # Eventually the server administrator should put whatever is appropiate herein.
@@ -284,14 +287,29 @@ function pedb {
   ensemble_starts=${@:5}  # All arguments after the fourth should be start positions for ensembles
   start_positions_amount=$(( $# - 4 ))
 
+  python ${all_scripts}json.log.py input ensembleAmount $ensemble
+  python ${all_scripts}json.log.py input conformerAmount $last
+  python ${all_scripts}json.log.py input ensembleStarts "$ensemble_starts"
+
+
   printf "\nXXXX: $xxxx \nPEDXXXX: $pedxxxx \nSpecified ensemble amount: $ensemble \nStart positions provided: $ensemble_starts \nAmount of start positions provided: $start_positions_amount \nSpecified conformer amount: $last \n" | tee -a $logName
 
   if [ $start_positions_amount !=  $ensemble ]
   then
+    python ${all_scripts}json.log.py pipe_result status "error"
+    python ${all_scripts}json.log.py status_log errors "yes"
+    python ${all_scripts}json.log.py status_log messaage "ERROR: the specified ensemble amount in the input does not match the provided amount of start positions."
+
     printf "ERROR: the specified ensemble amount int he input does not match the provided amount of start positions!\n" | tee -a $logName
     exit 1
   fi
   
+
+
+
+  # Proceed with pre-processing
+  python ${all_scripts}json.log.py pipe_result stage "data pre-processing"
+
   # Make folders for the entry
   mkdir -p ./${pedxxxx}/ensembles
   mkdir -p ./${pedxxxx}/Crysol
@@ -305,6 +323,8 @@ function pedb {
 
   # The following awk one-liner splits the PDB file into one PDB per model (one line AWK replacement of Pipe0 perl script)
   cd ${pedxxxx}/ensembles
+  python ${all_scripts}json.log.py input PDBfile ${xxxx}-all.pdb
+
   awk -v PEDXXXX=$pedxxxx -v START=$first 'match($0, /^MODEL/, x){outputName=PEDXXXX"-"START".pdb"; ++START;}{print >outputName;}' ../${xxxx}-all.pdb
   # Clean up
   rm ../${xxxx}-all.pdb
@@ -357,37 +377,49 @@ function pedb {
   fi
 
 
+  # Proceed with analysis
+
   # Run Pipe1
+  python ${all_scripts}json.log.py pipe_result stage "pipe1 data analysis"
+
   cd ./${pedxxxx}/ensembles
   printf "\nRunning Pipe 1 - Crysol... "
   perl ${all_scripts}Pipe1-batchCrysol-2018.pl > /dev/null
   printf "Pipe 1 done!\n"
 
   # Cleanup output
+  python ${all_scripts}json.log.py pipe_result stage "pipe1 output cleanup"
   mv rg.list ../Rg/
   mv log.list ../Crysol/
   tar -cz --remove-files -f ../Crysol/${pedxxxx}.alm.tar.gz ./*.alm
   tar -cz --remove-files -f ../Crysol/${pedxxxx}.int.tar.gz ./*.int
   tar -cz --remove-files -f ../Crysol/${pedxxxx}.log.tar.gz ./*.log
 
+
   # Run Pipe2, Pipe4, Pipe5 (condensed version)
+  python ${all_scripts}json.log.py pipe_result stage "pipe245 data analysis"
+
   cd ..  # move tho the entry folder, e.g. "PED1AAB" (i.e. one level above)
   printf "\nRunning Pipe245 - Plots and PyMol figures... "
   Rscript ${all_scripts}Pipe245.R > /dev/null
   printf "Pipe245 done!\n"
 
-  # Pipe3
-    # Este lo unico que hace es generar SQL, y ponerlo en un "uploadStuff"
-    # No lo necesitamos más
 
   # Process SAXS data
+  python ${all_scripts}json.log.py pipe_result stage "SAXS data analysis"
+  
   printf "\nRunning Pipe6 - SAXS data plots... "
   cd "$working_directory"
   saxs $xxxx $pedxxxx
   printf "Pipe6 done!\n"
 
   # Tar all of the .pdb files, and remove the original files
+  python ${all_scripts}json.log.py pipe_result stage "Final cleanup"
+
   tar -cz --remove-files -f ${pedxxxx}/${pedxxxx}-pdb.tar.gz ./${pedxxxx}/ensembles/*.pdb
+
+  python ${all_scripts}json.log.py pipe_result stage "Processing complete"
+  python ${all_scripts}json.log.py pipe_result status "OK"
 }
 
 
@@ -402,15 +434,19 @@ function pedb {
   # Either a single entry or multiple entries in a CSV file (TSV, hyphens, spaces are also supported).
 if [ "$input_file" = '' ]; then
 
-
   # Check if the input seems right
   pat="\w{4}\s\w{7}((\s[0-9]+)+)"
   a="$@"
+
+  python ${all_scripts}json.log.py pipe_result stage "Reading single input $a"
 
   if [[ $a =~ $pat ]]; then
     printf "\nInput arguments are cool! Arguments: $a \n"
   else
     printf "\nERROR: Input arguments are not cool!\nYour input: $a \n"
+    python ${all_scripts}json.log.py pipe_result status "error"
+    python ${all_scripts}json.log.py status_log errors "input arguments format error"
+    python ${all_scripts}json.log.py status_log message "input: $a"
     exit 1
   fi
 
@@ -423,6 +459,8 @@ if [ "$input_file" = '' ]; then
   
   pedb $logName $@
 
+  python ${all_scripts}json.log.py status_log stage "Processing complete"
+
   printf "\nExecution succesfull!\n" | tee -a $logName
   exit 0
 
@@ -431,7 +469,8 @@ else
   logNameList="${logPath}/${input_file}${leeme}"
 
   printf "\nYour input was a list with $entry_amount lines.\nList file: '$input_file'\nUnparsed arguments: $@\nLog files can be found within each entry folder.\n" | tee $logNameList
-  
+  python ${all_scripts}json.log.py pipe_result stage "Reading list input: $input_file"
+
   pat="\w{4}[,\t\s-]\w{7}(([,\t\s-][0-9]+)+)"
   #pat="\w{4},\w{7}((,[0-9]+)+)"  # Parse only CSV format
   
@@ -448,6 +487,7 @@ else
       logName="${logPath}/${logEntry}/${logEntry}${leeme}"
       
       printf "\nNow processing entry $argumentos of the list...\n" | tee $logName
+      python ${all_scripts}json.log.py input entry $logEntry
 
       # Let the magic happen:
       pedb $logName $argumentos
@@ -458,10 +498,17 @@ else
       printf "Pattern: $pat \n"
       printf "Pattern: $line \n"
       printf "Exiting... \n"
+
+      python ${all_scripts}json.log.py pipe_result status "error"
+      python ${all_scripts}json.log.py status_log errors "input arguments format error"
+      python ${all_scripts}json.log.py status_log message "input: $line"
+
       exit 1
     fi
   done < $input_file
 
+  python ${all_scripts}json.log.py status_log stage "Processing complete"
+  
   printf "\nExecution succesfull!\n" | tee -a $logNameList
   exit 0
 fi
