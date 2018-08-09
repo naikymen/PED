@@ -66,10 +66,7 @@ try:
     subprocess.run(['mkdir', '-p', './%s/Crysol' % pedxxxx])
     subprocess.run(['mkdir', '-p', './%s/Pymol' % pedxxxx])
     subprocess.run(['mkdir', '-p', './%s/Rg' % pedxxxx])
-except Exception as e:
-    print(e)
 
-try:
     if not os.path.exists("./%s/%s-all.pdb" % (pedxxxx, xxxx)):
         p = subprocess.run(
             'bzip2 -fckd %s%s-all.pdb.bz2 > ./%s/%s-all.pdb'
@@ -79,3 +76,8 @@ try:
 except subprocess.CalledProcessError as e:
     print('Unhappy3')
     print(e.stderr.decode('UTF-8'))
+
+except:
+    # I use the bare except because i do not know
+    print("Unexpected error in stage pre-prcessing stage")
+    raise
