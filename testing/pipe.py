@@ -51,9 +51,15 @@ class InputError(Exception):
 def tar_rm(outfile, infiles):
         p = subprocess.run(
             "tar -cz --remove-files -f %s %s" % (outfile, infiles),
-            shell=True, check=True, capture_output=True)
+            shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         return p
+
+
+def sprun(command):
+    subprocess.run(
+        command, shell=True, check=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
 def pedbcall(args, wd, list=None):
@@ -108,20 +114,17 @@ def pre(args):
         subprocess.run(['mkdir', '-p', './%s/Pymol' % pedxxxx])
         subprocess.run(['mkdir', '-p', './%s/Rg' % pedxxxx])
 
-        # Extract the PDB file to the working directory if it has not been done yet
+        # Extract the PDB file to the working directory if not already
         if not os.path.exists("./%s/%s-all.pdb" % (pedxxxx, xxxx)):
-            p = subprocess.run(
-                'bzip2 -fckd %s%s-all.pdb.bz2 > ./%s/%s-all.pdb'
-                % (options.pdb, xxxx, pedxxxx, xxxx),
-                shell=True, check=True, capture_output=True)
+            sprun('bzip2 -fckd %s%s-all.pdb.bz2 > ./%s/%s-all.pdb' % (
+                options.pdb, xxxx, pedxxxx, xxxx))
 
         # Split the PDB file into models using awk
         os.chdir('%s/ensembles' % pedxxxx)
-        p = subprocess.run(
-            "awk -v PEDXXXX=%s -v START=%s \
-            'match($0,/^MODEL/,x){outputName=PEDXXXX\"-\"START\".pdb\"; ++START;} \
-            {print >outputName;}' ../%s-all.pdb" % (pedxxxx, indices[0], xxxx),
-            shell=True, check=True, capture_output=True)
+        sprun("awk -v PEDXXXX=%s -v START=%s 'match($0,/^MODEL/,x)\
+            {outputName=PEDXXXX\"-\"START\".pdb\"; ++START;} \
+            {print >outputName;}' ../%s-all.pdb" % (pedxxxx, indices[0], xxxx))
+
         # Cleanup
         os.remove('../%s-all.pdb' % xxxx)
 
@@ -130,7 +133,8 @@ def pre(args):
             # This range goes from 1 to the amount of conformers
             # in the single ensemble (all of them)
             for i in range(int(indices[0]), int(conformers), 1):
-                os.rename('%s-%s.pdb' % (pedxxxx, i), '%s_1-%s.pdb' % (pedxxxx, i))
+                os.rename('%s-%s.pdb' % (pedxxxx, i),
+                    '%s_1-%s.pdb' % (pedxxxx, i))
         else:
             print('Multiple ensembles in the entry')
             # This range goes from 1 to the ensemble amount.
@@ -143,11 +147,15 @@ def pre(args):
                     ensemble_last_confromer = int(conformers) + 1
 
                 print("Ensemble %s: %s %s" % (
-                    i, ensemble_start_confromer, ensemble_last_confromer - 1))
+                    i,
+                    ensemble_start_confromer,
+                    ensemble_last_confromer - 1))
 
                 # This range goes from the first and last conformer's position
                 # in the PDB file, corresponding to the "current" ensemble.
-                r2 = range(ensemble_start_confromer, ensemble_last_confromer, 1)
+                r2 = range(
+                    ensemble_start_confromer,
+                    ensemble_last_confromer, 1)
                 for j in r2:
                     k = j - ensemble_start_confromer + 1
                     os.rename('%s-%s.pdb' % (pedxxxx, j),
@@ -175,19 +183,17 @@ def pdb(args, script_path, wd):
 
         # Crysol
         os.chdir('%s/ensembles' % pedxxxx)
-        print("Pipe1")
         # subprocess.run(
         #    "perl %s/Pipe1-batchCrysol-2018.pl" % script_path,
-        #    shell=True, check=True, capture_output=True)
+        #    shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         # re.match() is the same as putting a "^" at the start of the regex
         files = [f for f in os.listdir('.') if re.match(r'.*\.pdb$', f)]
         for f in files:
             subprocess.run(
                 "crysol %s" % f,
-                shell=True, check=True, capture_output=True)
-
-        print("Pipe1 done")
+                shell=True, check=True,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         # Cleanup Crysol output
         os.rename('rg.list', '../Rg/rg.list')
@@ -200,7 +206,8 @@ def pdb(args, script_path, wd):
         os.chdir('..')
         subprocess.run(
             "Rscript %s/Pipe245.R" % script_path,
-            shell=True, check=True, capture_output=True)
+            shell=True, check=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         # Cleanup
         tar_rm("%s/%s.-pdb.tar.gz" % pedxxxx, "%s/ensembles/*.pdb" % pedxxxx)
