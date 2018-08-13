@@ -8,7 +8,7 @@ import pandas
 # Test command:
 # rm -rf PED1AAA/; cp ../pipe.py pipe.py; python3 pipe.py 1AAA PED1AAA 3 32 1 12 22
 
-usage = "usage: pedbPipe [-l <entry list>] XXXX PEDXXXX ensemble# conformer# ensemble1 ensemble2 ensemble3 ..."
+usage = "usage: pedbPipe [options] [-l <entry list>] XXXX PEDXXXX ensemble# conformer# ensemble1 ensemble2 ensemble3 ..."
 parser = OptionParser(usage)
 
 
@@ -75,9 +75,7 @@ def pedbcall(args, wd, list=None):
         print("Single entry:", args)
         pre(args)
         pdb(args, options.scripts, options.working_directory)
-        if glob.glob("*" + args[0] + "*saxs.dat*"):
-            # If there is a file such as "1AAA*saxs.dat*"
-            saxs(args, options.scripts, options.working_directory)
+        saxs(args, options.scripts, options.working_directory)
 
     else:
         with open(list) as f:
@@ -87,9 +85,7 @@ def pedbcall(args, wd, list=None):
                 args = re.split(r'[,;\t\s-]+', line.strip())
                 pre(args)
                 pdb(args, options.scripts, options.working_directory)
-                if glob.glob("*" + args[0] + "*saxs.dat*"):
-                    # If there is a file such as "1AAA*saxs.dat*"
-                    saxs(args, options.scripts, options.working_directory)
+                saxs(args, options.scripts, options.working_directory)
 
 
 def pre(args):
@@ -210,8 +206,6 @@ def pipe1_crysol(pdb_files, pedxxxx):
         rg_list.write('\n')
 
     # Cleanup Crysol output
-    os.rename('rg.list', '../Rg/rg.list')
-    os.rename('log.list', '../Crysol/log.list')
     # Tar and move the Crysol output, removing the original files
     tar_rm("../Crysol/%s.alm.tar.gz" % pedxxxx, "./*.alm")
     tar_rm("../Crysol/%s.int.tar.gz" % pedxxxx, "./*.int")
@@ -222,21 +216,23 @@ def pdb(args, script_path, wd):
     try:
         # Setup
         pedxxxx = args[1]
+        os.chdir(wd)
 
         # Crysol
-        os.chdir(wd)
         os.chdir('%s/ensembles' % pedxxxx)
         # Replaced Pipe1.pl with this
         files = [f for f in os.listdir('.') if re.match(r'.*\.pdb$', f)]
         pipe1_crysol(files, pedxxxx)
+        os.chdir(wd)
 
         # Plots
+        os.chdir(pedxxxx)
+        # Warning, the pymol script's name is hardcoded as "Pipe5.1.pml"
+        sprun("Rscript %s/Pipe245.R %s" % (script_path, script_path))
         os.chdir(wd)
-        os.chdir('%s/Rg' % pedxxxx)
-        sprun("Rscript %s/Pipe245.R" % script_path)
 
         # Cleanup
-        tar_rm("%s/%s.-pdb.tar.gz" % pedxxxx, "%s/ensembles/*.pdb" % pedxxxx)
+        tar_rm("%s/%s.-pdb.tar.gz" % (pedxxxx, pedxxxx), "%s/ensembles/*.pdb" % pedxxxx)
         os.chdir(wd)
 
     except subprocess.CalledProcessError as e:
@@ -251,41 +247,45 @@ def pdb(args, script_path, wd):
 
 
 def saxs(args, script_path, wd):
-    try:
-        # Setup
-        os.chdir(wd)
-        # Save parameters
-        xxxx = args[0]
-        pedxxxx = args[1]
+    # If there is a file such as "1AAA*saxs.dat*"
+    if glob.glob("*" + args[0] + "*saxs.dat*"):
+        try:
+            # Setup
+            os.chdir(wd)
+            # Save parameters
+            xxxx = args[0]
+            pedxxxx = args[1]
 
-        # Create directories
-        subprocess.run(['mkdir', '-p', '%s/SAXS' % pedxxxx])
+            # Create directories
+            subprocess.run(['mkdir', '-p', '%s/SAXS' % pedxxxx])
 
-        # Extract the PDB file to the working directory if not already
-        if not glob.glob(args[0] + "-saxs.dat"):
-            # If there is a file such as "1AAA*saxs.dat" try to decompress it
-            sprun('bzip2 -fckd %s-saxs.dat.bz2 > %s-saxs.dat' % xxxx)
+            # Extract the PDB file to the working directory if not already
+            if not glob.glob(args[0] + "-saxs.dat"):
+                # If there is a file such as "1AAA*saxs.dat" try to decompress it
+                sprun('bzip2 -fckd %s-saxs.dat.bz2 > %s-saxs.dat' % xxxx)
 
-        # Run autorg
-        sprun('autorg %s-saxs.dat -f csv -o SAXS/%s-autorg.out' % xxxx)
+            # Run autorg
+            sprun('autorg %s-saxs.dat -f csv -o SAXS/%s-autorg.out' % xxxx)
 
-        # Extract Rg from the autorg output
-        autorg_out = pandas.read_csv('SAXS/%s-autorg.out' % xxxx)
-        rg = autorg_out.Rg[0]
+            # Extract Rg from the autorg output
+            autorg_out = pandas.read_csv('SAXS/%s-autorg.out' % xxxx)
+            rg = autorg_out.Rg[0]
 
-        # Run datgnom
-        sprun('datgnom -r %s -o SAXS/%s-saxs.dat.datgnom SAXS/%s-saxs.dat' % (
-            rg, xxxx, xxxx))
+            # Run datgnom
+            sprun('datgnom -r %s -o SAXS/%s-saxs.dat.datgnom SAXS/%s-saxs.dat' % (
+                rg, xxxx, xxxx))
 
-    except subprocess.CalledProcessError as e:
-        print('Subprocess error:')
-        print(e.stderr.decode('UTF-8'))
-        raise
+            # ...
 
-    except InputError as e:
-        # I use the bare except because i do not know
-        print("Unexpected error in stage pre-prcessing stage:", e.message)
-        raise
+        except subprocess.CalledProcessError as e:
+            print('Subprocess error:')
+            print(e.stderr.decode('UTF-8'))
+            raise
+
+        except InputError as e:
+            # I use the bare except because i do not know
+            print("Unexpected error in stage pre-prcessing stage:", e.message)
+            raise
 
 
 pedbcall(args, wd=options.working_directory, list=options.input)

@@ -1,6 +1,8 @@
 # setwd('/home/nicomic/Projects/Chemes/IDPfun/PED-DB2/PED1AAB')
+args <- commandArgs(trailingOnly = TRUE)
+scripts_path <- args[1]
 
-rg <- read.csv("rg.list", head = TRUE, sep="\t", stringsAsFactors = F);
+rg <- read.csv("Rg/rg.list", head = TRUE, sep="\t", stringsAsFactors = F);
 
 # Extract ensemble and entry information from the file name
 rg$ensemble <- unlist(lapply(strsplit(rg$PDB, split = '[_-]'), function(x) x[2]))
@@ -50,7 +52,7 @@ for(ensemble in unique(rg$ensemble)){
   
   pyMolColors <- c('average-203-232-107','min-242-233-225','max-28-20-13')  # This is deprecated, i left it there for the record
   datos2 <- as.data.frame(cbind(elegidos[,'PDB'], pyMolColors))
-  outputFile2 <- paste("PymolScript/",rg$pedxxxx[1], "_" ,ensemble , "-lista_AvgMinMax", sep = "")
+  outputFile2 <- paste("Pymol/",rg$pedxxxx[1], "_" ,ensemble , "-lista_AvgMinMax", sep = "")
   write.table(datos2, outputFile2, sep = "-", quote = F, row.names = F, col.names = F)
   
   
@@ -61,8 +63,7 @@ for(ensemble in unique(rg$ensemble)){
   
   # For each type: min, max and average (3 in total)
   for(n in 1:3){
-    pymolCall <- paste("pymol -qrc ../Scripts/Pipe5.1.pml --", 
-                       #elegidos$PDB[n],
+    pymolCall <- paste(sprintf("pymol -qrc %s/Pipe5.1.pml --", scripts_path), 
                        elegidos$PDBname[n],
                        elegidos$pedxxxx[n],
                        elegidos$ensemble[n],
@@ -71,7 +72,9 @@ for(ensemble in unique(rg$ensemble)){
     
     # "pymol -qrc ../Scripts/Pipe5.1.pml -- PED1AAB_1-2 PED1AAB 1         average 203     232     107"
     #             path/to/script.pml        name        id      ensemble  type    color1  color2  color3
-    
-    system(pymolCall)
+   system(pymolCall)
+   #cat(scripts_path,file="outfile.txt",append=TRUE,sep='\n')
+   #cat(pymolCall,file="outfile.txt",append=TRUE,sep='\n')
+   #cat(getwd(),file="outfile.txt",append=TRUE,sep='\n')
   }
 }

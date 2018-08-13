@@ -2,6 +2,9 @@ from pymol.cgo import *
 from pymol import cmd
 from sys import argv
 
+# Example call
+# pymol -qrc ../Scripts/Pipe5.1.pml -- PED1AAA_3-11 PED1AAA 3 max 28 20 13
+
 # Syntax highlighting for PyMol in Sublime Text :V
 # https://packagecontrol.io/packages/Pymol%20Language
 
@@ -18,7 +21,7 @@ color1 = int(arguments[4]);
 color2 = int(arguments[5]);
 color3 = int(arguments[6]);
 
-cmd.load("./ensembles/%s.pdb" % pdbFile)
+cmd.load("ensembles/%s.pdb" % pdbFile)
 set ray_trace_mode, 0;
 bg_color white;
 as car;
@@ -33,7 +36,7 @@ cmd.color( colorName, pdbFile )
 
 ray 520,390;
 
-outputName = "PymolScript/%s-%s-%s" % (entryName, ensembleNumber, colorName);
+outputName = "Pymol/%s-%s-%s" % (entryName, ensembleNumber, colorName);
 cmd.png(outputName);
 cmd.save(outputName + ".pse", format='pse');
 
