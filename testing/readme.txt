@@ -8,7 +8,7 @@ Input for tests.
    467 Aug  8 17:51 json.log.py
 A simple script to modify the status.json file.
 
-  1423 Aug  8 16:16 json.tools.py
+  1423 Aug  8 16:16 json.snippets.py
 Snippets to use the json python module
 
     52 Aug 10 14:20 list-entry
