@@ -11,7 +11,8 @@ RUN apt-get -y update && \
 		subversion \
 		curl \
 		libcairo2-dev \
-		libxt-dev
+		libxt-dev \
+		pymol
 
 RUN R -e "install.packages(c('data.table', 'Cairo'), repos = 'https://cran.stat.unipd.it/')"
 
@@ -24,4 +25,10 @@ RUN mkdir -p /home/software/atsas \
 	./configure.sh
 
 COPY ./ATSAS-2.8.4-1_amd64.deb /home/software/atsas/
-RUN dpkg -i /home/software/atsas/ATSAS-2.8.4-1_amd64.deb && apt-get install -f
+RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && \
+	apt-get -y install \
+		libqtgui4 \
+		libqt4-svg \
+		libqt4-network && \
+	dpkg -i /home/software/atsas/ATSAS-2.8.4-1_amd64.deb && \
+	apt-get -y install -f

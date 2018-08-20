@@ -6,7 +6,7 @@ The "list-entry-new" file contains the entries in the new format.
 	We should really check if the ensemble numbers/indices are ok.
 
 ## Dependencies
-ATSAS (autorg, datgnom, cablam, etc. https://www.embl-hamburg.de/biosaxs/download.html)
+ATSAS (autorg, datgnom, etc. https://www.embl-hamburg.de/biosaxs/download.html)
 
 MolProbity (no server needed, build/bin/molprobity.* tools only http://molprobity.biochem.duke.edu/)
 
@@ -16,6 +16,14 @@ PyMol
 
 ## Notes
 I have installed and run these tools in a Docker image of Ubuntu 18.04.
+
+## Updates
+### 2018-08-20
+Migration of the pipeline to python3 is almost complete.
+
+ATSAS will probably not be required anymore.
+
+There is now a Dockerfile that describes all required dependencies, and can be used to build a Debian image that satisfies all requirements.
 
 # Examples
 
