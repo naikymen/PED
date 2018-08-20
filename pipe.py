@@ -8,7 +8,7 @@ import pandas
 # Test command:
 # rm -rf PED1AAA/; cp ../pipe.py pipe.py; python3 pipe.py 1AAA PED1AAA 3 32 1 12 22
 
-usage = "usage: pedbPipe [options] [-l <entry list>] XXXX PEDXXXX ensemble# conformer# ensemble1 ensemble2 ensemble3 ..."
+usage = "usage: pedbPipe [-l <entry list>] XXXX PEDXXXX ensemble# conformer# ensemble1 ensemble2 ensemble3 ..."
 parser = OptionParser(usage)
 
 
@@ -249,43 +249,43 @@ def pdb(args, script_path, wd):
 def saxs(args, script_path, wd):
     # If there is a file such as "1AAA*saxs.dat*"
     if glob.glob("*" + args[0] + "*saxs.dat*"):
-        try:
-            # Setup
-            os.chdir(wd)
-            # Save parameters
-            xxxx = args[0]
-            pedxxxx = args[1]
+    try:
+        # Setup
+        os.chdir(wd)
+        # Save parameters
+        xxxx = args[0]
+        pedxxxx = args[1]
 
-            # Create directories
-            subprocess.run(['mkdir', '-p', '%s/SAXS' % pedxxxx])
+        # Create directories
+        subprocess.run(['mkdir', '-p', '%s/SAXS' % pedxxxx])
 
-            # Extract the PDB file to the working directory if not already
-            if not glob.glob(args[0] + "-saxs.dat"):
-                # If there is a file such as "1AAA*saxs.dat" try to decompress it
-                sprun('bzip2 -fckd %s-saxs.dat.bz2 > %s-saxs.dat' % xxxx)
+        # Extract the PDB file to the working directory if not already
+        if not glob.glob(args[0] + "-saxs.dat"):
+            # If there is a file such as "1AAA*saxs.dat" try to decompress it
+            sprun('bzip2 -fckd %s-saxs.dat.bz2 > %s-saxs.dat' % xxxx)
 
-            # Run autorg
-            sprun('autorg %s-saxs.dat -f csv -o SAXS/%s-autorg.out' % xxxx)
+        # Run autorg
+        sprun('autorg %s-saxs.dat -f csv -o SAXS/%s-autorg.out' % xxxx)
 
-            # Extract Rg from the autorg output
-            autorg_out = pandas.read_csv('SAXS/%s-autorg.out' % xxxx)
-            rg = autorg_out.Rg[0]
+        # Extract Rg from the autorg output
+        autorg_out = pandas.read_csv('SAXS/%s-autorg.out' % xxxx)
+        rg = autorg_out.Rg[0]
 
-            # Run datgnom
-            sprun('datgnom -r %s -o SAXS/%s-saxs.dat.datgnom SAXS/%s-saxs.dat' % (
-                rg, xxxx, xxxx))
+        # Run datgnom
+        sprun('datgnom -r %s -o SAXS/%s-saxs.dat.datgnom SAXS/%s-saxs.dat' % (
+            rg, xxxx, xxxx))
 
-            # ...
+        # ...
 
-        except subprocess.CalledProcessError as e:
-            print('Subprocess error:')
-            print(e.stderr.decode('UTF-8'))
-            raise
+    except subprocess.CalledProcessError as e:
+        print('Subprocess error:')
+        print(e.stderr.decode('UTF-8'))
+        raise
 
-        except InputError as e:
-            # I use the bare except because i do not know
-            print("Unexpected error in stage pre-prcessing stage:", e.message)
-            raise
+    except InputError as e:
+        # I use the bare except because i do not know
+        print("Unexpected error in stage pre-prcessing stage:", e.message)
+        raise
 
 
 pedbcall(args, wd=options.working_directory, list=options.input)

@@ -1,12 +1,16 @@
 from optparse import OptionParser
+import sys
 import re
 import os
 import glob
 import subprocess
 import pandas
+from Bio.PDB import PDBParser
+import itertools
 
 # Test command:
 # rm -rf PED1AAA/; cp ../pipe.py pipe.py; python3 pipe.py 1AAA PED1AAA 3 32 1 12 22
+# rm -rf PED1AAA/; python3 pipe.py 1AAA PED1AAA 3 32 1 12 22
 
 usage = "usage: pedbPipe [-l <entry list>] XXXX PEDXXXX ensemble# conformer# ensemble1 ensemble2 ensemble3 ..."
 parser = OptionParser(usage)
@@ -59,9 +63,9 @@ def tar_rm(outfile, infiles):
 
 
 def sprun(command):
-    subprocess.run(
-        command, shell=True, check=True,
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.run(
+            command, shell=True, check=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
 def pedbcall(args, wd, list=None):
@@ -75,9 +79,7 @@ def pedbcall(args, wd, list=None):
         print("Single entry:", args)
         pre(args)
         pdb(args, options.scripts, options.working_directory)
-        #if glob.glob("*" + args[0] + "*saxs.dat*"):
-            # If there is a file such as "1AAA*saxs.dat*"
-            #saxs(args, options.scripts, options.working_directory)
+        #saxs(args, options.scripts, options.working_directory)
 
     else:
         with open(list) as f:
@@ -87,9 +89,7 @@ def pedbcall(args, wd, list=None):
                 args = re.split(r'[,;\t\s-]+', line.strip())
                 pre(args)
                 pdb(args, options.scripts, options.working_directory)
-                #if glob.glob("*" + args[0] + "*saxs.dat*"):
-                    # If there is a file such as "1AAA*saxs.dat*"
-                    #saxs(args, options.scripts, options.working_directory)
+                #saxs(args, options.scripts, options.working_directory)
 
 
 def pre(args):
@@ -147,28 +147,32 @@ def pre(args):
         else:
             print('Multiple ensembles in the entry')
             # This range goes from 1 to the ensemble amount.
-            r1 = range(1, int(ensembles) + 1, 1)
-            for i in r1:
-                ensemble_start_confromer = int(indices[i - 1])
-                if not i == r1[-1]:
-                    ensemble_last_confromer = int(indices[i])
-                else:
-                    ensemble_last_confromer = int(conformers) + 1
+            with open('pdb.list', 'w') as pdblist:
+                pdblist.write(",".join(['file', 'ensemble', 'conformer' + '\n']))
+                r1 = range(1, int(ensembles) + 1, 1)
+                for i in r1:
+                    ensemble_start_confromer = int(indices[i - 1])
+                    if not i == r1[-1]:
+                        ensemble_last_confromer = int(indices[i])
+                    else:
+                        ensemble_last_confromer = int(conformers) + 1
 
-                print("Ensemble %s: %s %s" % (
-                    i,
-                    ensemble_start_confromer,
-                    ensemble_last_confromer - 1))
+                    print("Ensemble %s: %s %s" % (
+                        i,
+                        ensemble_start_confromer,
+                        ensemble_last_confromer - 1))
 
-                # This range goes from the first and last conformer's position
-                # in the PDB file, corresponding to the "current" ensemble.
-                r2 = range(
-                    ensemble_start_confromer,
-                    ensemble_last_confromer, 1)
-                for j in r2:
-                    k = j - ensemble_start_confromer + 1
-                    os.rename('%s-%s.pdb' % (pedxxxx, j),
-                        '%s_%s-%s.pdb' % (pedxxxx, i, k))
+                    # Range r2 goes from the 1st and last conformer's position
+                    # in the PDB file, corresponding to the "current" ensemble.
+                    r2 = range(
+                        ensemble_start_confromer,
+                        ensemble_last_confromer, 1)
+                    for j in r2:
+                        k = j - ensemble_start_confromer + 1
+                        os.rename('%s-%s.pdb' % (pedxxxx, j),
+                            '%s_%s-%s.pdb' % (pedxxxx, i, k))
+                        pdblist.write(",".join(
+                            ['%s_%s-%s.pdb' % (pedxxxx, i, k), str(i), str(k) + '\n']))
 
         # Cleanup
         os.chdir(wd)
@@ -184,50 +188,24 @@ def pre(args):
         raise
 
 
-def pipe1_crysol(pdb_files, pedxxxx):
-    with open('../Rg/rg.list', 'w') as rg_list:
-        # Write the header
-        rg_list.write('\t'.join(
-            ['PDB', 'Dmax', 'Rg']))
-
-        for f in pdb_files:
-            sprun("crysol %s" % f)
-            logfile = "".join([f.strip(".pdb"), '00.log'])
-
-            with open(logfile) as log:
-                # "Envelope  diameter :  68.43    "
-                # https://regex101.com/r/uleo3Y/1
-                dmax_p = re.compile(r'Envelope\s*diameter.*?:.*?((?:[\d.E\-\+])+)\s*')
-                # "Rg ( Atoms - Excluded volume + Shell ) ................. : 21.35"
-                rg_p = re.compile(r'Rg.*Atoms.*:.?([\d.E\-\+]+)')
-
-                text = log.read()
-                dmax_value = re.search(dmax_p, text).group(1)
-                rg_value = re.search(rg_p, text).group(1)
-
-                # Write saxs output
-                rg_list.write('\n' + '\t'.join([f, dmax_value, rg_value]))
-        rg_list.write('\n')
-
-    # Cleanup Crysol output
-    # Tar and move the Crysol output, removing the original files
-    tar_rm("../Crysol/%s.alm.tar.gz" % pedxxxx, "./*.alm")
-    tar_rm("../Crysol/%s.int.tar.gz" % pedxxxx, "./*.int")
-    tar_rm("../Crysol/%s.log.tar.gz" % pedxxxx, "./*.log")
-
-
-def pdb(args, script_path, wd):
+def pdb(args, script_path, wd, pdb_list_file='pdb.list'):
     try:
         # Setup
         pedxxxx = args[1]
         os.chdir(wd)
 
         # Crysol
-        os.chdir('%s/ensembles' % pedxxxx)
         # Replaced Pipe1.pl with this
-        files = [f for f in os.listdir('.') if re.match(r'.*\.pdb$', f)]
-        pipe1_crysol(files, pedxxxx)
+        os.chdir('%s/ensembles' % pedxxxx)
+        pdb_files_df = pandas.read_csv(pdb_list_file)
+        pipe1_crysol(pdb_files_df, pedxxxx)
         os.chdir(wd)
+
+        # N-to-N distance calculations
+        for index, row in pdb_files.iterrows():
+            n2nd = n2n(pedxxxx, row.file)
+            with open(".".join(row.file, '.n2n'), 'w') as d:
+                [d.write(str(value) + "\n") for value in n2nd]
 
         # Plots
         os.chdir(pedxxxx)
@@ -250,44 +228,105 @@ def pdb(args, script_path, wd):
         raise
 
 
+def pipe1_crysol(pdb_files, pedxxxx):
+    with open('../Rg/rg.list', 'w') as rg_list:
+        # Write the header
+        rg_list.write('\t'.join(
+            ['PDB', 'Ensemble', 'Dmax', 'Rg']))
+
+        for index, row in pdb_files.iterrows():
+            sprun("crysol %s" % row.file)
+
+            logfile = "".join([f.strip(".pdb"), '00.log'])
+
+            with open(logfile) as log:
+                # "Envelope  diameter :  68.43    "
+                # https://regex101.com/r/uleo3Y/1
+                dmax_p = re.compile(r'Envelope\s*diameter.*?:.*?((?:[\d.E\-\+])+)\s*')
+                # "Rg ( Atoms - Excluded volume + Shell ) ................. : 21.35"
+                rg_p = re.compile(r'Rg.*Atoms.*:.?([\d.E\-\+]+)')
+
+                text = log.read()
+                dmax_value = re.search(dmax_p, text).group(1)
+                rg_value = re.search(rg_p, text).group(1)
+
+                # Write saxs output
+                rg_list.write('\n' + '\t'.join([row.file, row.ensemble, dmax_value, rg_value]))
+        rg_list.write('\n')
+
+    # Cleanup Crysol output
+    # Tar and move the Crysol output, removing the original files
+    tar_rm("../Crysol/%s.alm.tar.gz" % pedxxxx, "./*.alm")
+    tar_rm("../Crysol/%s.int.tar.gz" % pedxxxx, "./*.int")
+    tar_rm("../Crysol/%s.log.tar.gz" % pedxxxx, "./*.log")
+
+
+def n2n(pedxxxx, pdb_file):
+    # Code adapted as found in satckexchange
+    # https://bioinformatics.stackexchange.com/questions/783/how-can-we-find-the-distance-between-all-residues-in-a-pdb-file
+
+    # Create parser
+    parser = PDBParser()
+
+    # Read structure from file
+    # The first argument is a user-given name for the structure
+    structure = parser.get_structure(pedxxxx, pdb_file)
+
+    model = structure[0]
+    # Get the first chain (i guess there is a more direct way than this one)
+    chain_id = [c.id[0] for c in model.get_chains()][0]
+    chain = model[chain_id]
+
+    # this example uses only the first residue of a single chain.
+    # it is easy to extend this to multiple chains and residues.
+
+    distances = []
+
+    [distances.append(i[0]['CA'] - i[1]['CA']) for i in itertools.combinations(chain, 2)]
+
+    return(distances)
+
+
 def saxs(args, script_path, wd):
-    try:
-        # Setup
-        os.chdir(wd)
-        # Save parameters
-        xxxx = args[0]
-        pedxxxx = args[1]
+    # If there is a file such as "1AAA*saxs.dat*"
+    if glob.glob("*" + args[0] + "*saxs.dat*"):
+        try:
+            # Setup
+            os.chdir(wd)
+            # Save parameters
+            xxxx = args[0]
+            pedxxxx = args[1]
 
-        # Create directories
-        subprocess.run(['mkdir', '-p', '%s/SAXS' % pedxxxx])
+            # Create directories
+            subprocess.run(['mkdir', '-p', '%s/SAXS' % pedxxxx])
 
-        # Extract the PDB file to the working directory if not already
-        if not glob.glob(args[0] + "-saxs.dat"):
+            # Extract the PDB file to the working directory if not already
             # If there is a file such as "1AAA*saxs.dat" try to decompress it
-            sprun('bzip2 -fckd %s-saxs.dat.bz2 > %s-saxs.dat' % xxxx)
+            if not glob.glob(args[0] + "-saxs.dat"):
+                sprun('bzip2 -fckd %s-saxs.dat.bz2 > %s-saxs.dat' % xxxx)
 
-        # Run autorg
-        sprun('autorg %s-saxs.dat -f csv -o SAXS/%s-autorg.out' % xxxx)
+            # Run autorg
+            sprun('autorg %s-saxs.dat -f csv -o SAXS/%s-autorg.out' % xxxx)
 
-        # Extract Rg from the autorg output
-        autorg_out = pandas.read_csv('SAXS/%s-autorg.out' % xxxx)
-        rg = autorg_out.Rg[0]
+            # Extract Rg from the autorg output
+            autorg_out = pandas.read_csv('SAXS/%s-autorg.out' % xxxx)
+            rg = autorg_out.Rg[0]
 
-        # Run datgnom
-        sprun('datgnom -r %s -o SAXS/%s-saxs.dat.datgnom SAXS/%s-saxs.dat' % (
-            rg, xxxx, xxxx))
+            # Run datgnom
+            sprun('datgnom -r %s -o SAXS/%s-saxs.dat.datgnom SAXS/%s-saxs.dat' % (
+                rg, xxxx, xxxx))
 
-        # ...
+            # ...
 
-    except subprocess.CalledProcessError as e:
-        print('Subprocess error:')
-        print(e.stderr.decode('UTF-8'))
-        raise
+        except subprocess.CalledProcessError as e:
+            print('Subprocess error:')
+            print(e.stderr.decode('UTF-8'))
+            raise
 
-    except InputError as e:
-        # I use the bare except because i do not know
-        print("Unexpected error in stage pre-prcessing stage:", e.message)
-        raise
+        except InputError as e:
+            # I use the bare except because i do not know
+            print("Unexpected error in stage pre-prcessing stage:", e.message)
+            raise
 
 
 pedbcall(args, wd=options.working_directory, list=options.input)
