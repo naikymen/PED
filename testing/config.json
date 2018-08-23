@@ -1,0 +1,7 @@
+{
+  "config": "default",
+  "working_directory": "default",
+  "input": "default",
+  "scripts": "somewhere/over/the/rainbow/",
+  "pdb": "default"
+}
