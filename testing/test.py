@@ -7,89 +7,86 @@ import json
 # rm -rf PED1AAA/; cp ../pipe.py pipe.py; python3 pipe.py 1AAA PED1AAA 3 32 1 12 22
 
 
-# Start the option.parser and look for a configuration file
-usage = "usage: pedbPipe [-l <entry list>] XXXX PEDXXXX ensemble# conformer# ensemble1 ensemble2 ensemble3 ..."
-parser = OptionParser(usage)
+def prettyjson(diccionario):
+    # Pretty print a dictionary as would a json output
+    # https://docs.python.org/3/library/json.html
+    jsonstring = json.dumps(diccionario)
+    data = json.loads(jsonstring)
+    print(json.dumps(data, sort_keys=True, indent=4))
 
+
+# Start the option.parser and look for a configuration file
+usage = "usage: pedbPipe [options] [-l <entry list>] \
+XXXX PEDXXXX ensemble# conformer# ensemble1 ensemble2 ensemble3 ..."
+parser = OptionParser(usage)
 parser.add_option("-c", "--config", action="store",
                   type="string", dest="config", default="",
                   help="load options from a configuration file.")
-
 (options, args) = parser.parse_args()
-print('Hay un config file?')
-print(options)
 
 
-# Load default variables
-wd = os.getcwd()
-list_input = None
-scripts = 'Scripts/'
-pdb = "./"
-saxs = "./"
-dry = False
+# Default Options
+defaults = {
+    "working_directory": os.getcwd(),
+    "list_input": None,
+    "scripts": 'Scripts/',
+    "pdb": "./",
+    "saxs": "./",
+}
+print('Defaults')
+prettyjson(defaults)
 
-print('Opciones dafault')
-print(wd, list_input, scripts, pdb, saxs, dry)
-
-
-# Let default options be overriden if a config file is provided
-
-
-def assign(jsondata, fieldname, default):
-    try:
-        if jsondata.get(fieldname) != 'default':
-            return(jsondata.get(fieldname))
-        else:
-            return(default)
-    except Exception as e:
-        print(e)
-        pass
-
-
+# Config file options: PARSE AS DEFINED IN THE "Default Options" section above
 if options.config != '':
     with open(options.config, "r") as read_file:
         data = json.load(read_file)
-        # Parse
-        wd = assign(data, 'working_directory', wd)
-        list_input = assign(data, 'input', list_input)
-        scripts = assign(data, 'scripts', scripts)
-        pdb = assign(data, 'pdb', pdb)
-        saxs = assign(data, 'saxs', saxs)
-        dry = assign(data, 'dry', dry)
-
-
-print('Opciones del config')
-print(wd, list_input, scripts, pdb, saxs, dry)
-
+        for key in data.keys():
+            try:
+                defaults[key]
+            except KeyError as ke:
+                # https://docs.python.org/3/library/exceptions.html
+                print("\nOption name '%s' in config file is not valid." % key)
+                print("Available options are:")
+                prettyjson(defaults)
+                raise ke
+            if data[key] != 'default':
+                    defaults[key] = data[key]
+print('Config')
+prettyjson(defaults)
 
 
 # Let everything be overwritten by command-line options
 parser.add_option("-w", "--working_directory", action="store",
-                  type="string", dest="working_directory", default=wd,
+                  type="string", dest="working_directory", default=defaults["working_directory"],
                   help="set the working directory.")
 
 parser.add_option("-l", "--list", action="store",
-                  type="string", dest="input", default=list_input,
+                  type="string", dest="input", default=defaults["list_input"],
                   help="file from where to read several input entries.")
 
 parser.add_option("-p", "--scripts", action="store",
-                  type="string", dest="scripts", default=scripts,
+                  type="string", dest="scripts", default=defaults["scripts"],
                   help="path to where the perl and R scripts are")
 
 parser.add_option("-m", "--pdb", action="store",
-                  type="string", dest="pdb", default=pdb,
+                  type="string", dest="pdb", default=defaults["pdb"],
                   help="path to the PDB files.")
 
 parser.add_option("-s", "--saxs", action="store",
-                  type="string", dest="saxs", default=saxs,
+                  type="string", dest="saxs", default=defaults["saxs"],
                   help="path to the SAXS files.")
 
 parser.add_option("-n", "--dry", action="store_true",
-                  dest="dry", default=dry,
+                  dest="dry", default=False,
                   help="print input and exit.")
 
 (options, args) = parser.parse_args()
 
-if dry is True:
+if options.dry is True:
     print(options)
+    # https://stackoverflow.com/questions/19747371/python-exit-commands-why-so-many-and-when-should-each-be-used/19747562
     sys.exit()
+
+print('Options')
+# https://stackoverflow.com/questions/1753460/python-optparse-values-instance
+prettyjson(vars(options))
