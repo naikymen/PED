@@ -36,24 +36,6 @@ defaults = {
 print('Defaults')
 prettyjson(defaults)
 
-# Config file options: PARSE AS DEFINED IN THE "Default Options" section above
-if options.config != '':
-    with open(options.config, "r") as read_file:
-        data = json.load(read_file)
-        for key in data.keys():
-            try:
-                defaults[key]
-            except KeyError as ke:
-                # https://docs.python.org/3/library/exceptions.html
-                print("\nOption name '%s' in config file is not valid." % key)
-                print("Available options are:")
-                prettyjson(defaults)
-                raise ke
-            if data[key] != 'default':
-                    defaults[key] = data[key]
-print('Config')
-prettyjson(defaults)
-
 
 # Let everything be overwritten by command-line options
 parser.add_option("-w", "--working_directory", action="store",
@@ -82,10 +64,32 @@ parser.add_option("-n", "--dry", action="store_true",
 
 (options, args) = parser.parse_args()
 
+
+# Config file options: PARSE AS DEFINED IN THE "Default Options" section above
+if options.config != '':
+    with open(options.config, "r") as read_file:
+        data = json.load(read_file)
+        for key in data.keys():
+            try:
+                defaults[key]
+            except KeyError as ke:
+                # https://docs.python.org/3/library/exceptions.html
+                print("\nOption name '%s' in config file is not valid." % key)
+                print("Available options are:")
+                prettyjson(defaults)
+                raise ke
+            if data[key] != 'default':
+                    defaults[key] = data[key]
+print('Config')
+prettyjson(defaults)
+
+
 if options.dry is True:
-    print(options)
+    print("Dry run, printing options and exiting:")
+    prettyjson(vars(options))
     # https://stackoverflow.com/questions/19747371/python-exit-commands-why-so-many-and-when-should-each-be-used/19747562
     sys.exit()
+
 
 print('Options')
 # https://stackoverflow.com/questions/1753460/python-optparse-values-instance
