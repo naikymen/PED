@@ -15,7 +15,7 @@ def prettyjson(diccionario):
     print(json.dumps(data, sort_keys=True, indent=4))
 
 
-def updateDict(originalDict, modifierDict, defaultDict, omitKeys=[], omitValues=['default']):
+def updateDict(originalDict, modifierDict, defaultDict, omitKeys=[], omitValues=[], defaultOmitValues=['default']):
     # The original will be updated by the modified:
     # Only if the modified is different from the default.
     # Specific keys and values can be omitted from modification,
@@ -28,9 +28,9 @@ def updateDict(originalDict, modifierDict, defaultDict, omitKeys=[], omitValues=
             # An exception will be raised if the option is "unrecognized"
             originalDict[key]
 
-            # Update the original if the modified is different from the default
-            # AND if the values are not in the omitions list
-            omitValues.append(defaultDict[key])
+            # Update the original with the modified
+            # except if if the values are in the omitions list.
+            defaultOmitValues.append(omitValues)
             if modifierDict[key] not in omitValues:
                 originalDict[key] = modifierDict[key]
         except KeyError as ke:
@@ -72,49 +72,52 @@ parser.add_option("-c", "--config", action="store",
                   type="string", dest="config", default="",
                   help="load options from a configuration file.")
 
-# Let everything be overwritten by command-line options
 parser.add_option("-w", "--working_directory", action="store",
-                  type="string", dest="working_directory", default=defaults["working_directory"],
+                  type="string", dest="working_directory", default='default',
                   help="set the working directory.")
 
 parser.add_option("-l", "--list", action="store",
-                  type="string", dest="list_input", default=defaults["list_input"],
+                  type="string", dest="list_input", default='default',
                   help="file from where to read several input entries.")
 
 parser.add_option("-p", "--scripts", action="store",
-                  type="string", dest="scripts", default=defaults["scripts"],
+                  type="string", dest="scripts", default='default',
                   help="path to where the perl and R scripts are")
 
 parser.add_option("-m", "--pdb", action="store",
-                  type="string", dest="pdb", default=defaults["pdb"],
+                  type="string", dest="pdb", default='default',
                   help="path to the PDB files.")
 
 parser.add_option("-s", "--saxs", action="store",
-                  type="string", dest="saxs", default=defaults["saxs"],
+                  type="string", dest="saxs", default='default',
                   help="path to the SAXS files.")
 
 parser.add_option("-n", "--dry", action="store_true",
                   dest="dry", default=False,
                   help="print input and exit.")
-
 (options, args) = parser.parse_args()
+
+# Config file options
+if options.config != "":
+    with open(options.config, "r") as read_file:
+        configopts = json.load(read_file)  # It is dict type
+        # Update the configuration
+        updateDict(settings, configopts, defaults)
+else:
+    print("No configuration file was CLI-specified")
+    print("With no default, only default and CLI options are used.")
+
+# Let everything be overwritten by non-default CLI options
 # https://stackoverflow.com/questions/1753460/python-optparse-values-instance
 
-# Config file options: PARSE AS DEFINED IN THE "Default Options" section above
-with open(options.config, "r") as read_file:
-    configopts = json.load(read_file)  # It is dict type
-# Parse the cli options
 cliopts = vars(options)
-
-# Update the configuration
-updateDict(settings, configopts, defaults)
 updateDict(settings, cliopts, defaults, omitKeys=['config', 'dry'])
 
 if options.dry is True:
     print("Dry run, printing options and exiting:")
     prettyjson(defaults)
-    prettyjson(configopts)
     prettyjson(cliopts)
+    prettyjson(configopts)
     prettyjson(settings)
     # https://stackoverflow.com/questions/19747371/python-exit-commands-why-so-many-and-when-should-each-be-used/19747562
     sys.exit()
