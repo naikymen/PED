@@ -64,7 +64,7 @@ defaults = {
     "list_input": "",
     "scripts": 'Scripts/',
     "pdb": "./",
-    "saxs": "./",
+    "saxs": "./"
 }
 # Default Options for modification (should be the same as the one above)
 settings = {
@@ -72,7 +72,7 @@ settings = {
     "list_input": "",
     "scripts": 'Scripts/',
     "pdb": "./",
-    "saxs": "./",
+    "saxs": "./"
 }
 
 
@@ -131,7 +131,8 @@ if options.dry is True:
     print("Dry run, printing options and exiting:")
     prettyjson(defaults)
     prettyjson(cliopts)
-    prettyjson(configopts)
+    if options.config != "":
+        prettyjson(configopts)
     prettyjson(settings)
     # https://stackoverflow.com/questions/19747371/python-exit-commands-why-so-many-and-when-should-each-be-used/19747562
     sys.exit()
