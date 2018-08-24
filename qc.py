@@ -103,7 +103,7 @@ parser.add_option("-m", "--pdb", action="store",
 
 parser.add_option("-g", "--log", action="store",
                   type="string", dest="log", default='default',
-                  help="name of the log file")
+                  help="path and name of the log file")
 
 parser.add_option("-n", "--dry", action="store_true",
                   dest="dry", default=False,
@@ -164,18 +164,10 @@ def sprun(command):
 def qcall(args, wd, list=None):
     # Setup
     os.chdir(wd)
-    if not settings['scripts'][0] == '/':
-        # If the scripts directory path is not absolute, make it so.
-        settings['scripts'] = '/'.join([wd, settings['scripts']])
-
-    if not settings['log'][0] == '/':
-        # If the log file path is not absolute, make it so.
-        settings['log'] = '/'.join([wd, settings['log']])
 
     if list is "":
         print("Single entry:", args)
         pre(args, settings, wd)
-        pdb(args, settings['scripts'], settings['working_directory'])
 
     else:
         with open(list) as f:
@@ -184,7 +176,6 @@ def qcall(args, wd, list=None):
                 # args = re.sub(r'[,\t\s-]+', ' ', line).strip().split(' ')
                 args = re.split(r'[,;\t\s-]+', line.strip())
                 pre(args, settings, wd)
-                pdb(args, settings['scripts'], settings['working_directory'])
 
 
 def pre(args, settings, wd):
@@ -204,8 +195,7 @@ def pre(args, settings, wd):
         ensembles = args[2]
         conformers = args[3]
         indices = args[4:]
-
-        print(xxxx)
+        logfile = settings['log']
 
         # Raise exception if input is bad
         if not indices.__len__() == int(ensembles):
@@ -223,31 +213,58 @@ def pre(args, settings, wd):
             sprun('bzip2 -fckd %s/%s-all.pdb.bz2 > ./%s/%s-all.pdb' % (
                 settings['pdb'], xxxx, pedxxxx, xxxx))
 
+        # AWK parsing must be done from the entry directory: PEDXXXX
+        os.chdir(pedxxxx)
+
         # Check for UNK residures
         # The RES string begins at 18 and ends at 20
-        #printf "\nScan for UNK residues\n" | tee -a $logName
+        # This first log overwrites previos logs, notice the single '>'
+        sprun("printf '\nScan for UNK residues\n' | tee -a %s" % logfile)
         sprun("cat %s-all.pdb | awk '/^ATOM.+/ { print $0 \"LINE: \" NR }' | \
          awk '/^.{17}UNK.+/ { print \"Warning! UNK residue at ATOM \" $2 \", \
-         line \" $NF \" of the PDB file.\"}' >> %s" % (xxxx, settings['log']))
+         line \" $NF \" of the PDB file.\"}' > %s" % (xxxx, logfile))
         #tail $logName -n 5
 
         # Check for Q atoms (NMR dummies)
         # The element column may be useful for filtering
+        sprun("printf '\nScan for Q pseudoatoms\n' | tee -a %s" % logfile)
+        sprun("cat %s-all.pdb | awk '/^ATOM.+/ { print $0 \"LINE: \" \
+            NR }' | awk 'match($0, /^.{77}(Q)/, ary) \
+            { print \"Warning! Pseudoatom \" ary[1] \" at line \" $NF \" of the PDB file!\"}' >> %s" % (xxxx, logfile))
         # Make temporary PDB files w/o the dummy ones, to not mess up the originals
+        
         # Perhaps checking the hydrogen naming version is being too picky
-        #printf "\nScan for Q pseudoatoms\n" | tee -a $logName
-        #cat ${xxxx}-all.pdb | awk '/^ATOM.+/ { print $0 "LINE: " NR }' | awk '/^.{17}Q[A-Z].+/ { print "Warning! Pseudoatom at line " $NF " of the PDB file."}' >> $logName
+        #print("cat %s-all.pdb | awk '/^ATOM.+/ { print $0 \"LINE: \" \
+        #    NR }' | awk 'match($0, /^.{13}.?(Q[A-Z]).+/, ary) \
+        #    { print \"Warning! Pseudoatom \" ary[1] \" at line \" $NF \" of \
+        #    the PDB file!\"}' >> %s" % (xxxx, settings['log']))
         #tail $logName -n 5
         # http://www.chem.uzh.ch/robinson/felixman/pseudoatom.html
 
-
-        # Check for missing residues
         # Check for missing chain information
         # Select ATOM lines and append the line number from the PDB file
         # Select entries with whitespace where the chain should be found (position 22)
         #printf "\nScan for missing chain data\n" | tee -a $logName
-        #cat ${xxxx}-all.pdb | awk '/^ATOM.+/ { print $0 "LINE: " NR }' | awk -v entryid="$xxxx" '/^.{21}(\ ).+/ { print "Warning! Missing chain information at ATOM " $2 ", line " $NF " of the "entryid" PDB file."}' >> $logName
-        #tail $logName -n 5
+        sprun("printf '\nScan for missing chain data\n' | tee -a %s" % logfile)
+        sprun("cat %s-all.pdb | awk '/^ATOM.+/ { print $0 \"LINE: \" NR }' | \
+            awk '/^.{21}(\ ).+/ { print \"Warning! Missing chain information at ATOM \" \
+            $2 \", line \" $NF \" of the \" %s \" PDB file.\"}' >> %s" % (xxxx, xxxx, logfile))
+
+        # Add a comment at the beggining of the clashscore file
+        #sed -i '1s;^;# Bad clash count per model;' pedQC/${xxxx}-all.summary.clashscore
+
+        #printf "\nRun Molprobity ramalyze\n" | tee -a $logName
+        #${molprobity_binaries}molprobity.ramalyze ${xxxx}-all.pdb > pedQC/${xxxx}-all.ramalyze
+        #cat ${xxxx}-all.ramalyze | awk '/SUMMARY/{print $0}' > pedQC/${xxxx}-all.summary.ramalyze
+
+        #printf "\nRun Molprobity cablam\n" | tee -a $logName
+        #${molprobity_binaries}molprobity.cablam ${xxxx}-all.pdb > pedQC/${xxxx}-all.cablam
+        #cat ${xxxx}-all.cablam | awk '/SUMMARY/{print $0}' > pedQC/${xxxx}-all.summary.cablam
+
+        #printf "\nRun Molprobity cbetadev\n" | tee -a $logName
+        #${molprobity_binaries}molprobity.cbetadev ${xxxx}-all.pdb > pedQC/${xxxx}-all.cbetadev
+        #cat ${xxxx}-all.cbetadev | awk '/SUMMARY/{print $0}' > pedQC/${xxxx}-all.summary.cbetadev      
+
 
         # Cleanup
         os.chdir(wd)
