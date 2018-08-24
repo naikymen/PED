@@ -58,7 +58,7 @@ def updateDict(originalDict, modifierDict, defaultDict, omitKeys=[], omitValues=
             raise ke
 
 
-# Default Options
+# Default Options reference (should be the same as the  one below)
 defaults = {
     "working_directory": os.getcwd(),
     "list_input": "",
@@ -66,6 +66,7 @@ defaults = {
     "pdb": "./",
     "saxs": "./",
 }
+# Default Options for modification (should be the same as the one above)
 settings = {
     "working_directory": os.getcwd(),
     "list_input": "",
@@ -160,7 +161,7 @@ def sprun(command):
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
-def pedbcall(args, wd, list=None):
+def pedbcall(args, wd, list=""):
     # Setup
     os.chdir(wd)
     if not settings['scripts'][0] == '/':
