@@ -41,9 +41,11 @@ def updateDict(originalDict, modifierDict, defaultDict, omitKeys=[], omitValues=
 
             # Update the original with the modified
             # except if if the values are in the omitions list.
-            defaultOmitValues.append(omitValues)
-            if modifierDict[key] not in omitValues:
+            defaultOmitValues.extend(omitValues)
+
+            if modifierDict[key] not in defaultOmitValues:
                 originalDict[key] = modifierDict[key]
+
         except KeyError as ke:
             # https://docs.python.org/3/library/exceptions.html
             print("\nERROR\nOption '%s' is not available." % key)
@@ -167,7 +169,7 @@ def pedbcall(args, wd, list=None):
 
     if list is "":
         print("Single entry:", args)
-        pre(args, settings)
+        pre(args, settings, wd)
         pdb(args, settings['scripts'], settings['working_directory'])
         # saxs(args, settings['scripts'], settings['working_directory'])
 
@@ -177,12 +179,12 @@ def pedbcall(args, wd, list=None):
                 # Convert the CSV/TSV/... to the correct input format
                 # args = re.sub(r'[,\t\s-]+', ' ', line).strip().split(' ')
                 args = re.split(r'[,;\t\s-]+', line.strip())
-                pre(args, settings)
+                pre(args, settings, wd)
                 pdb(args, settings['scripts'], settings['working_directory'])
                 # saxs(args, settings['scripts'], settings['working_directory'])
 
 
-def pre(args, settings):
+def pre(args, settings, wd):
     try:
         # Setup
         os.chdir(wd)
@@ -215,7 +217,7 @@ def pre(args, settings):
 
         # Extract the PDB file to the working directory if not already
         if not os.path.exists("./%s/%s-all.pdb" % (pedxxxx, xxxx)):
-            sprun('bzip2 -fckd %s%s-all.pdb.bz2 > ./%s/%s-all.pdb' % (
+            sprun('bzip2 -fckd %s/%s-all.pdb.bz2 > ./%s/%s-all.pdb' % (
                 settings['pdb'], xxxx, pedxxxx, xxxx))
 
         # Split the PDB file into models using awk
@@ -259,8 +261,12 @@ def pre(args, settings):
                         ensemble_last_confromer, 1)
                     for j in r2:
                         k = j - ensemble_start_confromer + 1
-                        os.rename('%s-%s.pdb' % (pedxxxx, j),
-                            '%s_%s-%s.pdb' % (pedxxxx, i, k))
+                        try:
+                            os.rename('%s-%s.pdb' % (pedxxxx, j),
+                                '%s_%s-%s.pdb' % (pedxxxx, i, k))
+                        except Exception:
+                            print('Failure while renaming PDB files.')
+                            raise
                         pdblist.write(",".join(
                             ['%s_%s-%s.pdb' % (pedxxxx, i, k), str(i), str(k) + '\n']))
 
