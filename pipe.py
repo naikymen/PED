@@ -131,11 +131,15 @@ updateDict(settings, cliopts, defaults, omitKeys=['config',
                                                   'molprobity'])
 
 if options.dry is True:
-    print("Dry run, printing options and exiting:")
+    print("Dry run, printing options and exiting...")
+    print("Default options:")
     prettyjson(defaults)
-    prettyjson(cliopts)
     if options.config != "":
+        print("Configuration file options:")
         prettyjson(configopts)
+    print("Command-line options:")
+    prettyjson(cliopts)
+    print("Final set of options:")
     prettyjson(settings)
     # https://stackoverflow.com/questions/19747371/python-exit-commands-why-so-many-and-when-should-each-be-used/19747562
     sys.exit()
