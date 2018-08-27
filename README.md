@@ -137,5 +137,9 @@ The location of the input can be specified using a variety of options:
         An additional logfile will appear for list entries at the working directory.
 ### Output
 Entry folders are created for each one as "PEDXXXX"
+Inside there are files and directories containing the output of different analyses: rg/dmax histograms and files, pymol plots, crysol output, and n2n distance calculations.
 
-Inside
+## To-do
+Improve this readme.
+
+Replace n2n distance calculations with end-to-end distances.
