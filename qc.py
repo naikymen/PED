@@ -2,11 +2,8 @@ from optparse import OptionParser
 import sys
 import re
 import os
-import glob
 import subprocess
-import pandas
 from Bio.PDB import PDBParser
-import itertools
 import json
 
 # Test command:
@@ -107,7 +104,7 @@ parser.add_option("-g", "--log", action="store",
 
 parser.add_option("-n", "--dry", action="store_true",
                   dest="dry", default=False,
-                  help="print input and exit.")
+                  help="show input, check if binaries are available and exit.")
 (options, args) = parser.parse_args()
 
 # Config file options
@@ -126,6 +123,19 @@ else:
 cliopts = vars(options)
 updateDict(settings, cliopts, defaults, omitKeys=['config', 'dry'])
 
+
+def checkCommand(name):
+    try:
+        subprocess.run(
+            'command -V %s' % (name),
+            shell=True, check=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except subprocess.CalledProcessError as e:
+        print('Subprocess error:')
+        print(e.stderr.decode('UTF-8'))
+        raise
+
+
 if options.dry is True:
     print("Dry run, printing options and exiting:")
     prettyjson(defaults)
@@ -134,8 +144,13 @@ if options.dry is True:
         prettyjson(configopts)
     prettyjson(settings)
     # https://stackoverflow.com/questions/19747371/python-exit-commands-why-so-many-and-when-should-each-be-used/19747562
+    print("Checking if molprobity commands exist in the shell")
+    checkCommand("%s/molprobity.clashscore" % settings['molprobity'])
+    checkCommand("%s/molprobity.ramalyze" % settings['molprobity'])
+    checkCommand("%s/molprobity.cablam" % settings['molprobity'])
+    checkCommand("%s/molprobity.cbetadev" % settings['molprobity'])
+    # checkCommand("%s/molprobity.clashscore" % settings['molprobity'])
     sys.exit()
-
 
 # At this point, options have been parsed,
 # and are available in the "settings" dictionary.
@@ -150,7 +165,8 @@ class InputError(Exception):
 def tar_rm(outfile, infiles):
         p = subprocess.run(
             "tar -cz --remove-files -f %s %s" % (outfile, infiles),
-            shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            shell=True, check=True, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
 
         return p
 
@@ -167,7 +183,7 @@ def qcall(args, wd, list=None):
 
     if list is "":
         print("Single entry:", args)
-        pre(args, settings, wd)
+        qcheck(args, settings, wd)
 
     else:
         with open(list) as f:
@@ -175,13 +191,14 @@ def qcall(args, wd, list=None):
                 # Convert the CSV/TSV/... to the correct input format
                 # args = re.sub(r'[,\t\s-]+', ' ', line).strip().split(' ')
                 args = re.split(r'[,;\t\s-]+', line.strip())
-                pre(args, settings, wd)
+                qcheck(args, settings, wd)
 
 
-def pre(args, settings, wd):
+def qcheck(args, settings, wd):
     try:
         # Setup
         os.chdir(wd)
+
         # Check if the input seems right
         pat = re.compile(r'^\w{4}\s\w{7}((\s[0-9]+)+)$')
         # Raise exception if input is bad
@@ -202,7 +219,7 @@ def pre(args, settings, wd):
             raise InputError('\nError in input arguments - \
                 ensemble# is %s while %s indices were provided\n' % (ensembles,indices.__len__()))
 
-        # Create directories
+        # Create subdirectories
         subprocess.run(['mkdir', '-p', '%s/ensembles' % pedxxxx])
         subprocess.run(['mkdir', '-p', '%s/Crysol' % pedxxxx])
         subprocess.run(['mkdir', '-p', '%s/Pymol' % pedxxxx])
@@ -213,7 +230,29 @@ def pre(args, settings, wd):
             sprun('bzip2 -fckd %s/%s-all.pdb.bz2 > ./%s/%s-all.pdb' % (
                 settings['pdb'], xxxx, pedxxxx, xxxx))
 
-        # AWK parsing must be done from the entry directory: PEDXXXX
+        # Run some checks on the PDB using awk
+        pdbcheck(pedxxxx, xxxx, logfile, settings)
+        os.chdir(wd)
+
+        # Run structure check with molprobity
+        molcheck(pedxxxx, xxxx, logfile, settings)
+        os.chdir(wd)
+
+        # Cleanup?
+
+    except subprocess.CalledProcessError as e:
+        print('Subprocess error:')
+        print(e.stderr.decode('UTF-8'))
+        raise
+
+    except InputError as e:
+        # I use the bare except because i do not know
+        print("Unexpected error in stage pre-prcessing stage:", e.message)
+        raise
+
+
+def pdbcheck(pedxxxx, xxxx, logfile, settings):
+            # AWK parsing must be done from the entry directory: PEDXXXX
         os.chdir(pedxxxx)
 
         # Check for UNK residures
@@ -232,8 +271,9 @@ def pre(args, settings, wd):
             NR }' | awk 'match($0, /^.{77}(Q)/, ary) \
             { print \"Warning! Pseudoatom \" ary[1] \" at line \" $NF \" of the PDB file!\"}' >> %s" % (xxxx, logfile))
         # Make temporary PDB files w/o the dummy ones, to not mess up the originals
-        
+
         # Perhaps checking the hydrogen naming version is being too picky
+        # So the following code was not used:
         #print("cat %s-all.pdb | awk '/^ATOM.+/ { print $0 \"LINE: \" \
         #    NR }' | awk 'match($0, /^.{13}.?(Q[A-Z]).+/, ary) \
         #    { print \"Warning! Pseudoatom \" ary[1] \" at line \" $NF \" of \
@@ -250,33 +290,44 @@ def pre(args, settings, wd):
             awk '/^.{21}(\ ).+/ { print \"Warning! Missing chain information at ATOM \" \
             $2 \", line \" $NF \" of the \" %s \" PDB file.\"}' >> %s" % (xxxx, xxxx, logfile))
 
-        # Add a comment at the beggining of the clashscore file
-        #sed -i '1s;^;# Bad clash count per model;' pedQC/${xxxx}-all.summary.clashscore
-
-        #printf "\nRun Molprobity ramalyze\n" | tee -a $logName
-        #${molprobity_binaries}molprobity.ramalyze ${xxxx}-all.pdb > pedQC/${xxxx}-all.ramalyze
-        #cat ${xxxx}-all.ramalyze | awk '/SUMMARY/{print $0}' > pedQC/${xxxx}-all.summary.ramalyze
-
-        #printf "\nRun Molprobity cablam\n" | tee -a $logName
-        #${molprobity_binaries}molprobity.cablam ${xxxx}-all.pdb > pedQC/${xxxx}-all.cablam
-        #cat ${xxxx}-all.cablam | awk '/SUMMARY/{print $0}' > pedQC/${xxxx}-all.summary.cablam
-
-        #printf "\nRun Molprobity cbetadev\n" | tee -a $logName
-        #${molprobity_binaries}molprobity.cbetadev ${xxxx}-all.pdb > pedQC/${xxxx}-all.cbetadev
-        #cat ${xxxx}-all.cbetadev | awk '/SUMMARY/{print $0}' > pedQC/${xxxx}-all.summary.cbetadev      
+        # Clean up
+        os.chdir('..')
 
 
-        # Cleanup
-        os.chdir(wd)
+def molcheck(pedxxxx, xxxx, logfile, settings):
+    # Setup
+    os.chdir(pedxxxx)
 
-    except subprocess.CalledProcessError as e:
-        print('Subprocess error:')
-        print(e.stderr.decode('UTF-8'))
-        raise
+    # This little AWK inline script finds lines with regex:
+    # returns the total clashscore, at the end of the file with /^MODEL/
+    # returns the start lines for each model with /^Bad/
+    # the clash counts for each one, by counting /^\ [A-Z][\ |0-9]+\ [A-Z]{3}/
+    # It also adds comments preceded by '#'' to counts and summary 'sections'
+    #printf "\nRun Molprobity clashscore\n" | tee -a $logName
+    sprun('%s/molprobity.clashscore %s-all.pdb > pedQC/%s-all.clashscore' % (settings['molprobity'], xxxx, xxxx))
+    sprun("cat pedQC/%s-all.clashscore | awk '/^MODEL/{if(count != 0) \
+        print count \"\n\n#Clashscore summary\"; count =0; print $0; next;} \
+        /^\ [A-Z][\ |0-9]+\ [A-Z]{3}/{count ++; next;} \
+        /^Bad\ Clashes/{print count; print $0; count = 0;next;}' \
+        > pedQC/%s-all.summary.clashscore" % (xxxx, xxxx))
 
-    except InputError as e:
-        # I use the bare except because i do not know
-        print("Unexpected error in stage pre-prcessing stage:", e.message)
-        raise
+    # Add a comment at the beggining of the clashscore file
+    sprun("sed -i '1s;^;# Bad clash count per model;' pedQC/%s-all.summary.clashscore" % xxxx)
+
+    #printf "\nRun Molprobity ramalyze\n" | tee -a $logName
+    sprun("%s/molprobity.ramalyze %s-all.pdb > pedQC/%s-all.ramalyze" % (settings['molprobity'], xxxx, xxxx))
+    sprun("cat %s-all.ramalyze | awk '/SUMMARY/{print $0}' > pedQC/%s-all.summary.ramalyze" % (xxxx, xxxx))
+
+    #printf "\nRun Molprobity cablam\n" | tee -a $logName
+    sprun("%s/molprobity.cablam %s-all.pdb > pedQC/%s-all.cablam" % (settings['molprobity'], xxxx, xxxx))
+    sprun("cat %s-all.cablam | awk '/SUMMARY/{print $0}' > pedQC/%s-all.summary.cablam" % (xxxx, xxxx))
+
+    #printf "\nRun Molprobity cbetadev\n" | tee -a $logName
+    sprun("%s/molprobity.cbetadev %s-all.pdb > pedQC/%s-all.cbetadev" % (settings['molprobity'], xxxx, xxxx))
+    sprun("cat %s-all.cbetadev | awk '/SUMMARY/{print $0}' > pedQC/%s-all.summary.cbetadev"  % (xxxx, xxxx))
+
+    # Clean up
+    os.chdir('..')
+
 
 qcall(args, wd=settings['working_directory'], list=settings['list_input'])
