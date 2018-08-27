@@ -1,6 +1,6 @@
 {
     "list_input": "default",
-    "pdb": "default",
+    "pdb": "Sample-models",
     "saxs": "default",
   	"scripts": "default",
   	"working_directory": "default",

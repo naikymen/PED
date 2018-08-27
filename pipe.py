@@ -26,7 +26,8 @@ def prettyjson(diccionario):
     print(json.dumps(data, sort_keys=True, indent=4))
 
 
-def updateDict(originalDict, modifierDict, defaultDict, omitKeys=[], omitValues=[], defaultOmitValues=['default']):
+def updateDict(originalDict, modifierDict, defaultDict,
+               omitKeys=[], omitValues=[], defaultOmitValues=['default']):
     # The original will be updated by the modified:
     # Only if the modified is different from the default.
     # Specific keys and values can be omitted from modification,
@@ -77,7 +78,6 @@ settings = {
 }
 
 
-
 # Start the option.parser and look for a configuration file
 usage = "usage: pedbPipe [options] [-l <entry list>] \
 XXXX PEDXXXX ensemble# conformer# ensemble1 ensemble2 ensemble3 ..."
@@ -126,7 +126,9 @@ else:
 # https://stackoverflow.com/questions/1753460/python-optparse-values-instance
 
 cliopts = vars(options)
-updateDict(settings, cliopts, defaults, omitKeys=['config', 'dry', 'molprobity'])
+updateDict(settings, cliopts, defaults, omitKeys=['config',
+                                                  'dry',
+                                                  'molprobity'])
 
 if options.dry is True:
     print("Dry run, printing options and exiting:")
@@ -152,7 +154,8 @@ class InputError(Exception):
 def tar_rm(outfile, infiles):
         p = subprocess.run(
             "tar -cz --remove-files -f %s %s" % (outfile, infiles),
-            shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            shell=True, check=True, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
 
         return p
 
@@ -184,7 +187,7 @@ def pedbcall(args, wd, list=""):
                 args = re.split(r'[,;\t\s-]+', line.strip())
                 pre(args, settings, wd)
                 pdb(args, settings['scripts'], settings['working_directory'])
-                # saxs(args, settings['scripts'], settings['working_directory'])
+                # saxs(args,settings['scripts'],settings['working_directory'])
 
 
 def pre(args, settings, wd):
@@ -209,8 +212,9 @@ def pre(args, settings, wd):
 
         # Raise exception if input is bad
         if not indices.__len__() == int(ensembles):
-            raise InputError('\nError in input arguments - \
-                ensemble# is %s while %s indices were provided\n' % (ensembles,indices.__len__()))
+            raise InputError('\nError in input arguments - ensemble# is %s \
+                             while %s indices were provided\n'
+                             % (ensembles, indices.__len__()))
 
         # Create directories
         subprocess.run(['mkdir', '-p', '%s/ensembles' % pedxxxx])
@@ -238,12 +242,14 @@ def pre(args, settings, wd):
             # in the single ensemble (all of them)
             for i in range(int(indices[0]), int(conformers), 1):
                 os.rename('%s-%s.pdb' % (pedxxxx, i),
-                    '%s_1-%s.pdb' % (pedxxxx, i))
+                          '%s_1-%s.pdb' % (pedxxxx, i))
         else:
             print('Multiple ensembles in the entry')
             # This range goes from 1 to the ensemble amount.
             with open('pdb.list', 'w') as pdblist:
-                pdblist.write(",".join(['file', 'ensemble', 'conformer' + '\n']))
+                pdblist.write(",".join(['file',
+                                        'ensemble',
+                                        'conformer' + '\n']))
                 r1 = range(1, int(ensembles) + 1, 1)
                 for i in r1:
                     ensemble_start_confromer = int(indices[i - 1])
@@ -266,12 +272,13 @@ def pre(args, settings, wd):
                         k = j - ensemble_start_confromer + 1
                         try:
                             os.rename('%s-%s.pdb' % (pedxxxx, j),
-                                '%s_%s-%s.pdb' % (pedxxxx, i, k))
+                                      '%s_%s-%s.pdb' % (pedxxxx, i, k))
                         except Exception:
                             print('Failure while renaming PDB files.')
                             raise
                         pdblist.write(",".join(
-                            ['%s_%s-%s.pdb' % (pedxxxx, i, k), str(i), str(k) + '\n']))
+                            ['%s_%s-%s.pdb' % (pedxxxx, i, k),
+                             str(i), str(k) + '\n']))
 
         # Cleanup
         os.chdir(wd)
@@ -301,10 +308,12 @@ def pdb(args, script_path, wd, pdb_list_file='pdb.list'):
         os.chdir(wd)
 
         # N-to-N distance calculations
-        for index, row in pdb_files.iterrows():
+        os.chdir('%s/ensembles' % pedxxxx)
+        for index, row in pdb_files_df.iterrows():
             n2nd = n2n(pedxxxx, row.file)
-            with open(".".join(row.file, '.n2n'), 'w') as d:
+            with open(".".join([row.file, '.n2n']), 'w') as d:
                 [d.write(str(value) + "\n") for value in n2nd]
+        os.chdir(wd)
 
         # Plots
         os.chdir(pedxxxx)
@@ -313,7 +322,8 @@ def pdb(args, script_path, wd, pdb_list_file='pdb.list'):
         os.chdir(wd)
 
         # Cleanup
-        tar_rm("%s/%s.-pdb.tar.gz" % (pedxxxx, pedxxxx), "%s/ensembles/*.pdb" % pedxxxx)
+        tar_rm("%s/%s.-pdb.tar.gz" % (pedxxxx, pedxxxx),
+               "%s/ensembles/*.pdb" % pedxxxx)
         os.chdir(wd)
 
     except subprocess.CalledProcessError as e:
@@ -327,16 +337,16 @@ def pdb(args, script_path, wd, pdb_list_file='pdb.list'):
         raise
 
 
-def pipe1_crysol(pdb_files, pedxxxx):
+def pipe1_crysol(pdb_files_df, pedxxxx):
     with open('../Rg/rg.list', 'w') as rg_list:
         # Write the header
         rg_list.write('\t'.join(
             ['PDB', 'Ensemble', 'Dmax', 'Rg']))
 
-        for index, row in pdb_files.iterrows():
+        for index, row in pdb_files_df.iterrows():
             sprun("crysol %s" % row.file)
 
-            logfile = "".join([f.strip(".pdb"), '00.log'])
+            logfile = "".join([row.file.strip(".pdb"), '00.log'])
 
             with open(logfile) as log:
                 # "Envelope  diameter :  68.43    "
@@ -350,7 +360,10 @@ def pipe1_crysol(pdb_files, pedxxxx):
                 rg_value = re.search(rg_p, text).group(1)
 
                 # Write saxs output
-                rg_list.write('\n' + '\t'.join([row.file, row.ensemble, dmax_value, rg_value]))
+                rg_list.write('\n' + '\t'.join([str(row.file),
+                                                str(row.ensemble),
+                                                str(dmax_value),
+                                                str(rg_value)]))
         rg_list.write('\n')
 
     # Cleanup Crysol output
@@ -412,8 +425,8 @@ def saxs(args, script_path, wd):
             rg = autorg_out.Rg[0]
 
             # Run datgnom
-            sprun('datgnom -r %s -o SAXS/%s-saxs.dat.datgnom SAXS/%s-saxs.dat' % (
-                rg, xxxx, xxxx))
+            sprun('datgnom -r %s -o SAXS/%s-saxs.dat.datgnom SAXS/%s-saxs.dat'
+                  % (rg, xxxx, xxxx))
 
             # ...
 
