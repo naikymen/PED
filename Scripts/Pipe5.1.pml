@@ -33,7 +33,7 @@ cmd.color( colorName, pdbFile )
 
 ray 520,390;
 
-outputName = "PymolScript/%s-%s-%s" % (entryName, ensembleNumber, colorName);
+outputName = "Pymol/%s-%s-%s" % (entryName, ensembleNumber, colorName);
 cmd.png(outputName);
 cmd.save(outputName + ".pse", format='pse');
 

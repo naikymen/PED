@@ -165,9 +165,10 @@ def tar_rm(outfile, infiles):
 
 
 def sprun(command):
-        subprocess.run(
-            command, shell=True, check=True,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.run(
+                command, shell=True, check=True,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return(p)
 
 
 def pedbcall(args, wd, list=""):
@@ -323,10 +324,13 @@ def pdb(args, script_path, wd, pdb_list_file='pdb.list'):
         os.chdir(pedxxxx)
         # Warning, the pymol script's name is hardcoded as "Pipe5.1.pml"
         sprun("Rscript %s/Pipe245.R %s" % (script_path, script_path))
+        sprun("python2 %s/Pipe5.2.py" % script_path)
         os.chdir(wd)
 
         # Cleanup
-        tar_rm("%s/%s.-pdb.tar.gz" % (pedxxxx, pedxxxx),
+        tar_rm("%s/%s.n2n.tar.gz" % (pedxxxx, pedxxxx),
+               "%s/ensembles/*.n2n" % pedxxxx)
+        tar_rm("%s/%s.pdb.tar.gz" % (pedxxxx, pedxxxx),
                "%s/ensembles/*.pdb" % pedxxxx)
         os.chdir(wd)
 
@@ -382,7 +386,7 @@ def n2n(pedxxxx, pdb_file):
     # https://bioinformatics.stackexchange.com/questions/783/how-can-we-find-the-distance-between-all-residues-in-a-pdb-file
 
     # Create parser
-    parser = PDBParser()
+    parser = PDBParser(QUIET=True)
 
     # Read structure from file
     # The first argument is a user-given name for the structure

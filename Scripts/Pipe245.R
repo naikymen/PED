@@ -2,6 +2,8 @@
 args <- commandArgs(trailingOnly = TRUE)
 scripts_path <- args[1]
 
+# setwd('/home/nicomic/Projects/Chemes/IDPfun/PED/PED1AAA/')
+# scripts_path <- '/home/nicomic/Projects/Chemes/IDPfun/PED/Scripts/'
 rg <- read.csv("Rg/rg.list", head = TRUE, sep="\t", stringsAsFactors = F);
 
 # Extract ensemble and entry information from the file name
@@ -10,6 +12,8 @@ rg$pedxxxx <- unlist(lapply(strsplit(rg$PDB, split = '[_-]'), function(x) x[1]))
 rg$PDBname <- unlist(lapply(strsplit(rg$PDB, split = '\\.'), function(x) x[1]))
 rg <- rg[order(rg$PDB),]
 
+if(file.exists('Pymol/pymolCalls')) file.remove('Pymol/pymolCalls')
+if(file.exists('Pymol/pymolArguments')) file.remove('Pymol/pymolCalls')
 
 for(ensemble in unique(rg$ensemble)){
   
@@ -63,8 +67,15 @@ for(ensemble in unique(rg$ensemble)){
   
   # For each type: min, max and average (3 in total)
   for(n in 1:3){
-    pymolCall <- paste(sprintf("pymol -qrc %s/Pipe5.1.pml --", scripts_path), 
+    # -y is quit on error
+    pymolCall <- paste(sprintf("pymol -qrcy %s/Pipe5.1.pml --", scripts_path), 
                        elegidos$PDBname[n],
+                       elegidos$pedxxxx[n],
+                       elegidos$ensemble[n],
+                       paste(pyMol[,n], collapse = ' '), 
+                       sep = ' ')
+    
+    pymolArgs <- paste(elegidos$PDBname[n],
                        elegidos$pedxxxx[n],
                        elegidos$ensemble[n],
                        paste(pyMol[,n], collapse = ' '), 
@@ -72,9 +83,15 @@ for(ensemble in unique(rg$ensemble)){
     
     # "pymol -qrc ../Scripts/Pipe5.1.pml -- PED1AAB_1-2 PED1AAB 1         average 203     232     107"
     #             path/to/script.pml        name        id      ensemble  type    color1  color2  color3
-   system(pymolCall)
-   #cat(scripts_path,file="outfile.txt",append=TRUE,sep='\n')
-   #cat(pymolCall,file="outfile.txt",append=TRUE,sep='\n')
-   #cat(getwd(),file="outfile.txt",append=TRUE,sep='\n')
+    
+    write(pymolCall, file = 'Pymol/pymolCalls', append = TRUE)
+
+    outputFile3 <- "Pymol/pymolArguments"
+    write.table(pymolArgs, outputFile3, quote = F, row.names = F, col.names = F, append = TRUE)
+    #try(system(pymolCall))
+    
+    #cat(scripts_path,file="outfile.txt",append=TRUE,sep='\n')
+    #cat(pymolCall,file="outfile.txt",append=TRUE,sep='\n')
+    #cat(getwd(),file="outfile.txt",append=TRUE,sep='\n')
   }
 }

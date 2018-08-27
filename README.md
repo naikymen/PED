@@ -1,8 +1,7 @@
 # PED
-The pedbPipe3.sh has a help section, call it by using the help option:
- 	$ bash pedbPipe3.sh -h
+The pedbPipe3.sh has a help section, call it by using the help option: ```$ bash pedbPipe3.sh -h```
 
-The "list-entry-new" file contains the entries in the new format.
+The *list-entry-all* file contains the entries in the new format.
 	We should really check if the ensemble numbers/indices are ok.
 
 ## Dependencies
@@ -20,6 +19,9 @@ PyMol
 I have installed and run these tools in a Docker image of debian:latest (you may use the Dockerfile inside the Docker directory)
 
 ## Updates
+### 2018-08-27
+Migration of the pipeline and the quality check scripts to python3 is complete.
+
 ### 2018-08-20
 Migration of the pipeline to python3 is almost complete.
 
@@ -79,6 +81,7 @@ $ python3 pipe.py -w /path/to/wd/ 1AAA PED1AAA 3 32 1 12 22
 They are described in the help section. Using options flags will override the values in the configuration file (i.e. paths to executables or input files).
 
 ## Input/Output Specifications
+### Input
 Generally, the script requires the following input:
           1)  Entry information (ID and the indexes of each ensemble [subset of models] within the PDB file)
               Provided as a list of entries ina  file, or as arguements for a single entry only.
@@ -132,3 +135,7 @@ The location of the input can be specified using a variety of options:
 
         Log files will appear inside the entry folder for single entries, unless a 
         An additional logfile will appear for list entries at the working directory.
+### Output
+Entry folders are created for each one as "PEDXXXX"
+
+Inside
