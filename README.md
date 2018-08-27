@@ -37,7 +37,7 @@ $ python3 qc.py -h
 $ python3 pipe.py -h
 ```
 ### Input
-Two modes ar supported: list input OR single entry input. The format of the list mode is described in the help section.
+Two modes ar supported: list input OR single entry input. The format of the list mode is described in the "Input/Output Specifications" section below.
 ```
 $ python3 pipe.py -l list-entry
 
@@ -79,45 +79,30 @@ $ python3 pipe.py -w /path/to/wd/ 1AAA PED1AAA 3 32 1 12 22
 They are described in the help section. Using options flags will override the values in the configuration file (i.e. paths to executables or input files).
 
 ## Input/Output Specifications
-usage: pipe.py [options] [-l <entry list>] XXXX PEDXXXX ensemble_# ensemble1 ensemble2 ensemble3 ...
-        
-        -h  Show this help and exit.
+Generally, the script requires the following input:
+          1)  Entry information (ID and the indexes of each ensemble [subset of models] within the PDB file)
+              Provided as a list of entries ina  file, or as arguements for a single entry only.
+          2)  A PDB file with all of the models, sorted by the ensemble to which they belong.
+          3)  An OPTIONAL sax.dat file
 
-        -n 	Dry run, print only the input options and exit.
+The location of the input can be specified using a variety of options:
+
+        usage: pipe.py [options] [-l <entry list>] XXXX PEDXXXX ensemble_# ensemble1 ensemble2 ensemble3 ...
 
         -w  Set the working directory.
 	        # Default behavior is to move to the directory where the script is executed (os.getcwd())
 	        # Unless other options are used, all required files are assumed to be in the working directory
 
-        -c  Load options from a configuration file.
+        -c  Load options from a JSON configuration file:
+	        {
+	            "list_input": "default",
+	            "molprobity": "/MolProbity/build/bin/",
+	            "pdb": "Sample-models",
+	            "saxs": "default",
+	            "scripts": "default",
+	            "working_directory": "default"
+	        }
 
-			# Directory where the auxiliary scripts are.
-			# This string must end with a slash '/'
-			all_scripts='~/IDPfun/PED/Scripts/'
-
-			# Directory where the PDB files are
-			# This string must end with a slash '/'
-			pdbs_path=./
-
-			# Directory where the optional SAXS files are
-			# This string must end with a slash '/'
-			saxs_path=./
-
-			# Directory where the reference SAXS files are (in CSV format)
-			# This string must end with a slash '/'
-			ref_saxs_path=$saxs_path
-
-			# Path for the log files
-			# This string must end with a slash '/'
-			logPath=./
-
-			# Directory where the molprobity binaries are found (for the QC script only).
-			# This string must end with a slash '/'
-			molprobity_binaries='/home/MolProbity/build/bin/' 
-
-			# Note: relative paths such as './something/' will be interpreted according to the working directory
-			# The default is to use the output from pwd, but this can be overriden by using the -w flag.
-        
         -p  Path to the directory where the perl and R scripts are.
         
         -b 	Path to the directory where the MolProbity binaries are.
@@ -126,24 +111,21 @@ usage: pipe.py [options] [-l <entry list>] XXXX PEDXXXX ensemble_# ensemble1 ens
         
         -s  Path to the SAXS data, where it will look for files named '1AAA-saxs.dat.bz2' and such.
 
-        The script requires the following input:
-          1)  Entry information (ID and the indexes of each ensemble [subset of models] within the PDB file)
-              Provided as a list of entries ina  file, or as arguements for a single entry only.
-          2)  A PDB file with all of the models
-          3)  An OPTIONAL sax.dat file
-
         -l  Input a list of entries from a list file (see csv format below, will ignore other arguments)
 
-	        The list input should have a header. The entries should look like:
-	        XXXX,PEDXXXX,ensemble_amount,model_amount,model1Start,model2Start,model3Start[, ...]
+	        The list input should NOT have a header, and the entries should look like:
+	        	XXXX,PEDXXXX,ensemble_amount,model_amount,model1Start,model2Start,model3Start[, ...]
+	        Where:
 	         'XXXX' is the PED entry ID
+	         'PEDXXXX' is the PED entry ID with PED at the beginning.
 	         'ensemble_amount' is the total number of ensembles in the entry
 	         'model_amount' is the total number of pdb models in the entry
+	         'modelNStart' is the position where model N starts in the PDB file
 
 	        They may be separated by a comma, tab, space or hyphen. They are parsed by the following regex:
 	          \w{4}[,\t\s-]\w{7}(([,\t\s-][0-9]+)+)
 	        These symbols are later replaced by a space in the awk command.
-	        So please do not include any of these in the data (e.g. 'PED-ABCD' is NOT adequate input).
+	        So please do not include any of these in the metadata (e.g. 'PED-ABCD' is NOT adequate input).
 
 	        Please incude a final newline in the list file, this is necessary!
 	        The script will attempt to include one if it is not there, by editing the list.

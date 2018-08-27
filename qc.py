@@ -306,8 +306,8 @@ def molcheck(pedxxxx, xxxx, logfile, settings):
     # the clash counts for each one, by counting /^\ [A-Z][\ |0-9]+\ [A-Z]{3}/
     # It also adds comments preceded by '#'' to counts and summary 'sections'
     # printf "\nRun Molprobity clashscore\n" | tee -a $logName
-    sprun('%s/molprobity.clashscore %s-all.pdb \
-        > pedQC/%s-all.clashscore' % (settings['molprobity'], xxxx, xxxx))
+    #sprun('%s/molprobity.clashscore %s-all.pdb \
+    #    > pedQC/%s-all.clashscore' % (settings['molprobity'], xxxx, xxxx))
     sprun("cat pedQC/%s-all.clashscore | awk '/^MODEL/{if(count != 0) print count \"\\n\\n#Clashscore summary\"; count =0; print $0; next;}\
         /^\ [A-Z][\ |0-9]+\ [A-Z]{3}/{count ++; next;}\
         /^Bad\ Clashes/{print count; print $0; count = 0;next;}'  \
@@ -320,19 +320,19 @@ def molcheck(pedxxxx, xxxx, logfile, settings):
     # printf "\nRun Molprobity ramalyze\n" | tee -a $logName
     sprun("%s/molprobity.ramalyze %s-all.pdb \
         > pedQC/%s-all.ramalyze" % (settings['molprobity'], xxxx, xxxx))
-    sprun("cat %s-all.ramalyze | awk '/SUMMARY/{print $0}' \
+    sprun("cat pedQC/%s-all.ramalyze | awk '/SUMMARY/{print $0}' \
         > pedQC/%s-all.summary.ramalyze" % (xxxx, xxxx))
 
     # printf "\nRun Molprobity cablam\n" | tee -a $logName
     sprun("%s/molprobity.cablam %s-all.pdb \
         > pedQC/%s-all.cablam" % (settings['molprobity'], xxxx, xxxx))
-    sprun("cat %s-all.cablam | awk '/SUMMARY/{print $0}' \
+    sprun("cat pedQC/%s-all.cablam | awk '/SUMMARY/{print $0}' \
         > pedQC/%s-all.summary.cablam" % (xxxx, xxxx))
 
     # printf "\nRun Molprobity cbetadev\n" | tee -a $logName
     sprun("%s/molprobity.cbetadev %s-all.pdb \
         > pedQC/%s-all.cbetadev" % (settings['molprobity'], xxxx, xxxx))
-    sprun("cat %s-all.cbetadev | awk '/SUMMARY/{print $0}' \
+    sprun("cat pedQC/%s-all.cbetadev | awk '/SUMMARY/{print $0}' \
         > pedQC/%s-all.summary.cbetadev" % (xxxx, xxxx))
 
     # Clean up
