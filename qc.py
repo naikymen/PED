@@ -3,7 +3,6 @@ import sys
 import re
 import os
 import subprocess
-from Bio.PDB import PDBParser
 import json
 
 # Test command:
@@ -12,7 +11,7 @@ import json
 
 
 # Test command:
-# python3 test.py -c config.json -w "/home/nicomic/Projects/Chemes/IDPfun/PED/testing" -l listaloca -n
+# python3 qc.py -c config.json -w "/home/nicomic/Projects/Chemes/IDPfun/PED/testing" -l listaloca -n
 
 
 def prettyjson(diccionario):
@@ -55,7 +54,7 @@ def updateDict(originalDict, modifierDict, defaultDict, omitKeys=[], omitValues=
             raise ke
 
 
-# Default Options
+# Available options for the QC script
 defaults = {
     "working_directory": os.getcwd(),
     "list_input": "",
@@ -66,7 +65,7 @@ defaults = {
 settings = {
     "working_directory": os.getcwd(),
     "list_input": "",
-    "molprobity": 'Scripts/',
+    "molprobity": '/MolProbity/build/bin/molprobity.clashscore',
     "pdb": "./",
     "log": "qc.log"
 }
@@ -112,7 +111,7 @@ if options.config != "":
     with open(options.config, "r") as read_file:
         configopts = json.load(read_file)  # It is dict type
         # Update the configuration
-        updateDict(settings, configopts, defaults)
+        updateDict(settings, configopts, defaults, omitKeys=['saxs', 'scripts'])
 else:
     print("No configuration file was CLI-specified")
     print("With no default, only default and CLI options are used.")
@@ -137,19 +136,20 @@ def checkCommand(name):
 
 
 if options.dry is True:
-    print("Dry run, printing options and exiting:")
+    print("\nDry run, printing options and exiting:")
     prettyjson(defaults)
     prettyjson(cliopts)
     if options.config != "":
         prettyjson(configopts)
     prettyjson(settings)
     # https://stackoverflow.com/questions/19747371/python-exit-commands-why-so-many-and-when-should-each-be-used/19747562
-    print("Checking if molprobity commands exist in the shell")
+    print("\nChecking if molprobity commands exist in the shell...")
     checkCommand("%s/molprobity.clashscore" % settings['molprobity'])
     checkCommand("%s/molprobity.ramalyze" % settings['molprobity'])
     checkCommand("%s/molprobity.cablam" % settings['molprobity'])
     checkCommand("%s/molprobity.cbetadev" % settings['molprobity'])
     # checkCommand("%s/molprobity.clashscore" % settings['molprobity'])
+    print('Ok')
     sys.exit()
 
 # At this point, options have been parsed,
@@ -224,6 +224,7 @@ def qcheck(args, settings, wd):
         subprocess.run(['mkdir', '-p', '%s/Crysol' % pedxxxx])
         subprocess.run(['mkdir', '-p', '%s/Pymol' % pedxxxx])
         subprocess.run(['mkdir', '-p', '%s/Rg' % pedxxxx])
+        subprocess.run(['mkdir', '-p', '%s/pedQC' % pedxxxx])
 
         # Extract the PDB file to the entry directory if not already done
         if not os.path.exists("./%s/%s-all.pdb" % (pedxxxx, xxxx)):
@@ -267,9 +268,10 @@ def pdbcheck(pedxxxx, xxxx, logfile, settings):
         # Check for Q atoms (NMR dummies)
         # The element column may be useful for filtering
         sprun("printf '\nScan for Q pseudoatoms\n' | tee -a %s" % logfile)
-        sprun("cat %s-all.pdb | awk '/^ATOM.+/ { print $0 \"LINE: \" \
-            NR }' | awk 'match($0, /^.{77}(Q)/, ary) \
-            { print \"Warning! Pseudoatom \" ary[1] \" at line \" $NF \" of the PDB file!\"}' >> %s" % (xxxx, logfile))
+        sprun("cat %s-all.pdb | awk '/^ATOM.+/ { print $0 \"LINE: \" NR }' | \
+            awk 'match($0, /^.{77}(Q)/, ary) \
+            {print \"Warning! Pseudoatom \" ary[1] \" at line \" $NF \" of the PDB file!\"}' \
+            >> %s" % (xxxx, logfile))
         # Make temporary PDB files w/o the dummy ones, to not mess up the originals
 
         # Perhaps checking the hydrogen naming version is being too picky
@@ -287,8 +289,8 @@ def pdbcheck(pedxxxx, xxxx, logfile, settings):
         #printf "\nScan for missing chain data\n" | tee -a $logName
         sprun("printf '\nScan for missing chain data\n' | tee -a %s" % logfile)
         sprun("cat %s-all.pdb | awk '/^ATOM.+/ { print $0 \"LINE: \" NR }' | \
-            awk '/^.{21}(\ ).+/ { print \"Warning! Missing chain information at ATOM \" \
-            $2 \", line \" $NF \" of the \" %s \" PDB file.\"}' >> %s" % (xxxx, xxxx, logfile))
+            awk '/^.{21}(\ ).+/ {print \"Warning! Missing chain information at ATOM \" $2 \", line \" $NF \" of the \" %s \" PDB file.\"}' \
+            >> %s" % (xxxx, xxxx, logfile))
 
         # Clean up
         os.chdir('..')
@@ -303,28 +305,35 @@ def molcheck(pedxxxx, xxxx, logfile, settings):
     # returns the start lines for each model with /^Bad/
     # the clash counts for each one, by counting /^\ [A-Z][\ |0-9]+\ [A-Z]{3}/
     # It also adds comments preceded by '#'' to counts and summary 'sections'
-    #printf "\nRun Molprobity clashscore\n" | tee -a $logName
-    sprun('%s/molprobity.clashscore %s-all.pdb > pedQC/%s-all.clashscore' % (settings['molprobity'], xxxx, xxxx))
-    sprun("cat pedQC/%s-all.clashscore | awk '/^MODEL/{if(count != 0) \
-        print count \"\n\n#Clashscore summary\"; count =0; print $0; next;} \
-        /^\ [A-Z][\ |0-9]+\ [A-Z]{3}/{count ++; next;} \
-        /^Bad\ Clashes/{print count; print $0; count = 0;next;}' \
+    # printf "\nRun Molprobity clashscore\n" | tee -a $logName
+    sprun('%s/molprobity.clashscore %s-all.pdb \
+        > pedQC/%s-all.clashscore' % (settings['molprobity'], xxxx, xxxx))
+    sprun("cat pedQC/%s-all.clashscore | awk '/^MODEL/{if(count != 0) print count \"\\n\\n#Clashscore summary\"; count =0; print $0; next;}\
+        /^\ [A-Z][\ |0-9]+\ [A-Z]{3}/{count ++; next;}\
+        /^Bad\ Clashes/{print count; print $0; count = 0;next;}'  \
         > pedQC/%s-all.summary.clashscore" % (xxxx, xxxx))
 
     # Add a comment at the beggining of the clashscore file
-    sprun("sed -i '1s;^;# Bad clash count per model;' pedQC/%s-all.summary.clashscore" % xxxx)
+    sprun("sed -i '1s;^;# Bad clash count per model;' \
+        pedQC/%s-all.summary.clashscore" % xxxx)
 
-    #printf "\nRun Molprobity ramalyze\n" | tee -a $logName
-    sprun("%s/molprobity.ramalyze %s-all.pdb > pedQC/%s-all.ramalyze" % (settings['molprobity'], xxxx, xxxx))
-    sprun("cat %s-all.ramalyze | awk '/SUMMARY/{print $0}' > pedQC/%s-all.summary.ramalyze" % (xxxx, xxxx))
+    # printf "\nRun Molprobity ramalyze\n" | tee -a $logName
+    sprun("%s/molprobity.ramalyze %s-all.pdb \
+        > pedQC/%s-all.ramalyze" % (settings['molprobity'], xxxx, xxxx))
+    sprun("cat %s-all.ramalyze | awk '/SUMMARY/{print $0}' \
+        > pedQC/%s-all.summary.ramalyze" % (xxxx, xxxx))
 
-    #printf "\nRun Molprobity cablam\n" | tee -a $logName
-    sprun("%s/molprobity.cablam %s-all.pdb > pedQC/%s-all.cablam" % (settings['molprobity'], xxxx, xxxx))
-    sprun("cat %s-all.cablam | awk '/SUMMARY/{print $0}' > pedQC/%s-all.summary.cablam" % (xxxx, xxxx))
+    # printf "\nRun Molprobity cablam\n" | tee -a $logName
+    sprun("%s/molprobity.cablam %s-all.pdb \
+        > pedQC/%s-all.cablam" % (settings['molprobity'], xxxx, xxxx))
+    sprun("cat %s-all.cablam | awk '/SUMMARY/{print $0}' \
+        > pedQC/%s-all.summary.cablam" % (xxxx, xxxx))
 
-    #printf "\nRun Molprobity cbetadev\n" | tee -a $logName
-    sprun("%s/molprobity.cbetadev %s-all.pdb > pedQC/%s-all.cbetadev" % (settings['molprobity'], xxxx, xxxx))
-    sprun("cat %s-all.cbetadev | awk '/SUMMARY/{print $0}' > pedQC/%s-all.summary.cbetadev"  % (xxxx, xxxx))
+    # printf "\nRun Molprobity cbetadev\n" | tee -a $logName
+    sprun("%s/molprobity.cbetadev %s-all.pdb \
+        > pedQC/%s-all.cbetadev" % (settings['molprobity'], xxxx, xxxx))
+    sprun("cat %s-all.cbetadev | awk '/SUMMARY/{print $0}' \
+        > pedQC/%s-all.summary.cbetadev" % (xxxx, xxxx))
 
     # Clean up
     os.chdir('..')

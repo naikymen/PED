@@ -58,7 +58,8 @@ def updateDict(originalDict, modifierDict, defaultDict, omitKeys=[], omitValues=
             raise ke
 
 
-# Default Options
+# Available options and default values
+# reference dictionary (should be the same as the one below)
 defaults = {
     "working_directory": os.getcwd(),
     "list_input": "",
@@ -66,6 +67,7 @@ defaults = {
     "pdb": "./",
     "saxs": "./"
 }
+# editable dictionary (should be the same as the one above)
 settings = {
     "working_directory": os.getcwd(),
     "list_input": "",
@@ -115,7 +117,7 @@ if options.config != "":
     with open(options.config, "r") as read_file:
         configopts = json.load(read_file)  # It is dict type
         # Update the configuration
-        updateDict(settings, configopts, defaults)
+        updateDict(settings, configopts, defaults, omitKeys=['molprobity'])
 else:
     print("No configuration file was CLI-specified")
     print("With no default, only default and CLI options are used.")
@@ -124,7 +126,7 @@ else:
 # https://stackoverflow.com/questions/1753460/python-optparse-values-instance
 
 cliopts = vars(options)
-updateDict(settings, cliopts, defaults, omitKeys=['config', 'dry'])
+updateDict(settings, cliopts, defaults, omitKeys=['config', 'dry', 'molprobity'])
 
 if options.dry is True:
     print("Dry run, printing options and exiting:")
@@ -161,7 +163,7 @@ def sprun(command):
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
-def pedbcall(args, wd, list=None):
+def pedbcall(args, wd, list=""):
     # Setup
     os.chdir(wd)
     if not settings['scripts'][0] == '/':

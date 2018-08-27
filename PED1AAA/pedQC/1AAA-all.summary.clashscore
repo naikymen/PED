@@ -1,0 +1,99 @@
+# Bad clash count per model
+Bad Clashes >= 0.4 Angstrom MODEL   4
+141
+Bad Clashes >= 0.4 Angstrom MODEL   5
+25
+Bad Clashes >= 0.4 Angstrom MODEL   6
+51
+Bad Clashes >= 0.4 Angstrom MODEL   7
+103
+Bad Clashes >= 0.4 Angstrom MODEL   1
+110
+Bad Clashes >= 0.4 Angstrom MODEL   2
+53
+Bad Clashes >= 0.4 Angstrom MODEL   3
+32
+Bad Clashes >= 0.4 Angstrom MODEL  32
+103
+Bad Clashes >= 0.4 Angstrom MODEL   8
+60
+Bad Clashes >= 0.4 Angstrom MODEL   9
+43
+Bad Clashes >= 0.4 Angstrom MODEL  17
+79
+Bad Clashes >= 0.4 Angstrom MODEL  16
+38
+Bad Clashes >= 0.4 Angstrom MODEL  15
+62
+Bad Clashes >= 0.4 Angstrom MODEL  14
+42
+Bad Clashes >= 0.4 Angstrom MODEL  13
+28
+Bad Clashes >= 0.4 Angstrom MODEL  12
+79
+Bad Clashes >= 0.4 Angstrom MODEL  11
+103
+Bad Clashes >= 0.4 Angstrom MODEL  10
+83
+Bad Clashes >= 0.4 Angstrom MODEL  31
+23
+Bad Clashes >= 0.4 Angstrom MODEL  30
+29
+Bad Clashes >= 0.4 Angstrom MODEL  19
+47
+Bad Clashes >= 0.4 Angstrom MODEL  18
+43
+Bad Clashes >= 0.4 Angstrom MODEL  22
+82
+Bad Clashes >= 0.4 Angstrom MODEL  23
+99
+Bad Clashes >= 0.4 Angstrom MODEL  20
+76
+Bad Clashes >= 0.4 Angstrom MODEL  21
+161
+Bad Clashes >= 0.4 Angstrom MODEL  26
+61
+Bad Clashes >= 0.4 Angstrom MODEL  27
+53
+Bad Clashes >= 0.4 Angstrom MODEL  24
+19
+Bad Clashes >= 0.4 Angstrom MODEL  25
+59
+Bad Clashes >= 0.4 Angstrom MODEL  28
+100
+Bad Clashes >= 0.4 Angstrom MODEL  29
+58
+
+#Clashscore summary
+MODEL    1 clashscore = 79.25
+MODEL    2 clashscore = 38.21
+MODEL    3 clashscore = 23.10
+MODEL    4 clashscore = 102.10
+MODEL    5 clashscore = 18.05
+MODEL    6 clashscore = 36.74
+MODEL    7 clashscore = 74.37
+MODEL    8 clashscore = 43.35
+MODEL    9 clashscore = 31.02
+MODEL   10 clashscore = 59.76
+MODEL   11 clashscore = 74.26
+MODEL   12 clashscore = 58.40
+MODEL   13 clashscore = 20.20
+MODEL   14 clashscore = 30.26
+MODEL   15 clashscore = 44.73
+MODEL   16 clashscore = 27.46
+MODEL   17 clashscore = 57.16
+MODEL   18 clashscore = 31.00
+MODEL   19 clashscore = 33.89
+MODEL   20 clashscore = 54.79
+MODEL   21 clashscore = 116.08
+MODEL   22 clashscore = 59.12
+MODEL   23 clashscore = 71.74
+MODEL   24 clashscore = 13.70
+MODEL   25 clashscore = 46.97
+MODEL   26 clashscore = 45.36
+MODEL   27 clashscore = 38.21
+MODEL   28 clashscore = 72.10
+MODEL   29 clashscore = 41.79
+MODEL   30 clashscore = 20.89
+MODEL   31 clashscore = 16.57
+MODEL   32 clashscore = 74.21

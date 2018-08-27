@@ -3,5 +3,6 @@
     "pdb": "default",
     "saxs": "default",
   	"scripts": "default",
-  	"working_directory": "default"
+  	"working_directory": "default",
+  	"molprobity": "/MolProbity/build/bin/"
 }
