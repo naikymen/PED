@@ -2,13 +2,17 @@
 args <- commandArgs(trailingOnly = TRUE)
 scripts_path <- args[1]
 
+# For testing
 # setwd('/home/nicomic/Projects/Chemes/IDPfun/PED/PED1AAA/')
 # scripts_path <- '/home/nicomic/Projects/Chemes/IDPfun/PED/Scripts/'
+
+# Setup
 rg <- read.csv("Rg/rg.list", head = TRUE, sep="\t", stringsAsFactors = F);
 names(rg) <- c('PDB', 'ensemble', 'Dmax', 'Rg', 'pedxxxx')
 rg$PDBname <- unlist(lapply(strsplit(rg$PDB, split = '\\.'), function(x) x[1]))
 
-if(file.exists('chosenRg.list')) file.remove('chosenRg.list')
+# This is deprecated, i left it there for the record
+#if(file.exists('chosenRg.list')) file.remove('chosenRg.list')
 
 for(ensemble in unique(rg$ensemble)){
   
@@ -40,11 +44,12 @@ for(ensemble in unique(rg$ensemble)){
   write.table(datos1, outputFile1, sep = "\t", quote = F, row.names = F)
   
   
+  # This is deprecated, i left it there for the record
   # Obtiene los conformeros con Rg máximo, mínimo y "medio"
-  elegidos <- rgSub[c(which.min(abs(rgSub$Rg - Rg_mean)),
-                      which.min(rgSub$Rg),
-                      which.max(rgSub$Rg)),]
-  write.table(elegidos, 'chosenRg.list', sep = ",", quote = F, row.names = F, col.names = F, append = TRUE)
+  #elegidos <- rgSub[c(which.min(abs(rgSub$Rg - Rg_mean)),
+  #                    which.min(rgSub$Rg),
+  #                    which.max(rgSub$Rg)),]
+  #write.table(elegidos, 'chosenRg.list', sep = ",", quote = F, row.names = F, col.names = F, append = TRUE)
   
   # This is deprecated, i left it there for the record
   #pyMolColors <- c('average-203-232-107','min-242-233-225','max-28-20-13')

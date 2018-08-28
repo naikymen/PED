@@ -310,6 +310,7 @@ def pdb(args, script_path, wd, pdb_list_file='pdb.list'):
         os.chdir(wd)
 
         # N-to-N distance calculations
+        # It wont be useful for now but I'll leave it here anyways.
         os.chdir('%s/ensembles' % pedxxxx)
         for index, row in pdb_files_df.iterrows():
             n2nd = n2n(pedxxxx, row.file)
@@ -325,7 +326,6 @@ def pdb(args, script_path, wd, pdb_list_file='pdb.list'):
         pymolCalls = buildPymolCalls(rgListFile='Rg/rg.list')
         sprun("python2 %s/Pipe5.2.py %s" %
               (script_path, " ".join("'{}'".format(k) for k in pymolCalls)))
-
         os.chdir(wd)
 
         # Cleanup
