@@ -1,4 +1,5 @@
 import pandas
+import sys
 
 
 def buildPymolCall(chosenRgListFile='chosenRg.list'):
@@ -23,4 +24,68 @@ def buildPymolCall(chosenRgListFile='chosenRg.list'):
 
     return(calls)
 
-buildPymolCall()
+
+def buildPymolCall2(chosenRgListDf):
+    calls = []
+
+    theChosenOnes = chosenRgListDf[chosenRgListDf['Value'].notnull()]
+
+    print(theChosenOnes)
+
+    result = pandas.concat([theChosenOnes['PDBname'].astype(str),
+                            theChosenOnes['PEDXXXX'].astype(str),
+                            theChosenOnes['Ensemble'].astype(str),
+                            theChosenOnes['Value'].astype(str)],
+                            axis=1)
+
+    [calls.append(row.str.cat(sep=' ')) for index, row in result.iterrows()]
+
+    print(calls)
+
+
+def selectMinMeanMax(rgListFile='rg.list'):
+    rgList = pandas.read_csv(rgListFile, sep='\t')
+    rgList['PDBname'] = rgList['PDB'].map(lambda x: str(x)[:-4])
+    rgList['Value'] = None
+    rgGroups = rgList.groupby('Ensemble')
+
+    for name, ens_subset in rgGroups:
+        rgList.loc[ens_subset['Rg'].idxmax(), 'Value'] = 'max 28 20 13'
+        rgList.loc[ens_subset['Rg'].idxmin(), 'Value'] = 'min 242 233 225'
+        rgList.loc[(ens_subset['Rg'] - ens_subset['Rg'].mean()).abs().idxmin(),
+                   'Value'] = 'average 203 232 107'
+
+    return(rgList)
+
+
+def buildPymolCalls(rgListFile='rg.list'):
+    rgList = pandas.read_csv(rgListFile, sep='\t')
+    rgList['PDBname'] = rgList['PDB'].map(lambda x: str(x)[:-4])
+    rgList['Value'] = None
+    rgGroups = rgList.groupby('Ensemble')
+
+    for name, ens_subset in rgGroups:
+        rgList.loc[ens_subset['Rg'].idxmax(), 'Value'] = 'max 28 20 13'
+        rgList.loc[ens_subset['Rg'].idxmin(), 'Value'] = 'min 242 233 225'
+        rgList.loc[(ens_subset['Rg'] - ens_subset['Rg'].mean()).abs().idxmin(),
+                   'Value'] = 'average 203 232 107'
+
+    theChosenOnes = rgList[rgList['Value'].notnull()]
+
+    result = pandas.concat([theChosenOnes['PDBname'].astype(str),
+                            theChosenOnes['PEDXXXX'].astype(str),
+                            theChosenOnes['Ensemble'].astype(str),
+                            theChosenOnes['Value'].astype(str)],
+                           axis=1)
+
+    calls = []
+    [calls.append(row.str.cat(sep=' ')) for index, row in result.iterrows()]
+
+    # print(theChosenOnes)
+    # print(calls)
+    return(calls)
+
+
+pymolCalls = buildPymolCalls(rgListFile='Rg/rg.list')
+print("python2 %s/Pipe5.2.py %s" %
+      ('/somewhere/', " ".join("'{}'".format(k) for k in pymolCalls)))

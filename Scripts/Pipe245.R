@@ -46,10 +46,9 @@ for(ensemble in unique(rg$ensemble)){
                       which.max(rgSub$Rg)),]
   write.table(elegidos, 'chosenRg.list', sep = ",", quote = F, row.names = F, col.names = F, append = TRUE)
   
-  
   # This is deprecated, i left it there for the record
-  pyMolColors <- c('average-203-232-107','min-242-233-225','max-28-20-13')
-  datos2 <- as.data.frame(cbind(elegidos[,'PDB'], pyMolColors))
-  outputFile2 <- paste("Pymol/",rg$pedxxxx[1], "_" ,ensemble , "-lista_AvgMinMax", sep = "")
-  write.table(datos2, outputFile2, sep = "-", quote = F, row.names = F, col.names = F)
+  #pyMolColors <- c('average-203-232-107','min-242-233-225','max-28-20-13')
+  #datos2 <- as.data.frame(cbind(elegidos[,'PDB'], pyMolColors))
+  #outputFile2 <- paste("Pymol/",rg$pedxxxx[1], "_" ,ensemble , "-lista_AvgMinMax", sep = "")
+  #write.table(datos2, outputFile2, sep = "-", quote = F, row.names = F, col.names = F)
 }

@@ -11,7 +11,9 @@ from sys import argv
 # https://pymolwiki.org/index.php/Python_Integration
 pymol.finish_launching()
 
-myargs = open('Pymol/pymolArguments')
+myargs = argv[2:]
+print(myargs)
+
 for a in myargs:
     arguments = a.split()
     pymol.cmd.reinitialize()
