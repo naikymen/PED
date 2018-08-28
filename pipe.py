@@ -15,7 +15,7 @@ import json
 
 
 # Test command:
-# python3 test.py -c config.json -w "/home/nicomic/Projects/Chemes/IDPfun/PED/testing" -l listaloca -n
+# python3 test.py -c config.json -w "/home/nicomic/Projects/Chemes/IDPfun/PED/testing" -l list-entry -n
 
 
 def prettyjson(diccionario):
@@ -165,9 +165,8 @@ def tar_rm(outfile, infiles):
 
 
 def sprun(command):
-        p = subprocess.run(
-                command, shell=True, check=True,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.run(command, shell=True, check=True,
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         return(p)
 
 
@@ -180,7 +179,7 @@ def pedbcall(args, wd, list=""):
 
     if list is "":
         print("Single entry:", args)
-        pre(args, settings, wd)
+        splitPDB(args, settings, wd)
         pdb(args, settings['scripts'], settings['working_directory'])
         # saxs(args, settings['scripts'], settings['working_directory'])
 
@@ -190,12 +189,12 @@ def pedbcall(args, wd, list=""):
                 # Convert the CSV/TSV/... to the correct input format
                 # args = re.sub(r'[,\t\s-]+', ' ', line).strip().split(' ')
                 args = re.split(r'[,;\t\s-]+', line.strip())
-                pre(args, settings, wd)
+                splitPDB(args, settings, wd)
                 pdb(args, settings['scripts'], settings['working_directory'])
                 # saxs(args,settings['scripts'],settings['working_directory'])
 
 
-def pre(args, settings, wd):
+def splitPDB(args, settings, wd):
     try:
         # Setup
         os.chdir(wd)
@@ -212,8 +211,6 @@ def pre(args, settings, wd):
         ensembles = args[2]
         conformers = args[3]
         indices = args[4:]
-
-        print(xxxx)
 
         # Raise exception if input is bad
         if not indices.__len__() == int(ensembles):
@@ -242,14 +239,14 @@ def pre(args, settings, wd):
         os.remove('../%s-all.pdb' % xxxx)
 
         if ensembles == 1:
-            print('One ensemble in the entry')
+            print('\nOne ensemble in entry %s' % xxxx)
             # This range goes from 1 to the amount of conformers
             # in the single ensemble (all of them)
             for i in range(int(indices[0]), int(conformers), 1):
                 os.rename('%s-%s.pdb' % (pedxxxx, i),
                           '%s_1-%s.pdb' % (pedxxxx, i))
         else:
-            print('Multiple ensembles in the entry')
+            print('\nMultiple ensembles in entry %s' % xxxx)
             # This range goes from 1 to the ensemble amount.
             with open('pdb.list', 'w') as pdblist:
                 pdblist.write(",".join(['file',
@@ -324,6 +321,9 @@ def pdb(args, script_path, wd, pdb_list_file='pdb.list'):
         os.chdir(pedxxxx)
         # Warning, the pymol script's name is hardcoded as "Pipe5.1.pml"
         sprun("Rscript %s/Pipe245.R %s" % (script_path, script_path))
+        with open('Pymol/pymolArguments', 'w+') as callFile:
+            pymolargs = buildPymolCall()
+            [callFile.write(c + '\n') for c in pymolargs]
         sprun("python2 %s/Pipe5.2.py" % script_path)
         os.chdir(wd)
 
@@ -349,7 +349,7 @@ def pipe1_crysol(pdb_files_df, pedxxxx):
     with open('../Rg/rg.list', 'w') as rg_list:
         # Write the header
         rg_list.write('\t'.join(
-            ['PDB', 'Ensemble', 'Dmax', 'Rg']))
+            ['PDB', 'Ensemble', 'Dmax', 'Rg', 'PEDXXXX']))
 
         for index, row in pdb_files_df.iterrows():
             sprun("crysol %s" % row.file)
@@ -371,7 +371,8 @@ def pipe1_crysol(pdb_files_df, pedxxxx):
                 rg_list.write('\n' + '\t'.join([str(row.file),
                                                 str(row.ensemble),
                                                 str(dmax_value),
-                                                str(rg_value)]))
+                                                str(rg_value),
+                                                pedxxxx]),)
         rg_list.write('\n')
 
     # Cleanup Crysol output
@@ -402,9 +403,34 @@ def n2n(pedxxxx, pdb_file):
 
     distances = []
 
-    [distances.append(i[0]['CA'] - i[1]['CA']) for i in itertools.combinations(chain, 2)]
+    [distances.append(i[0]['CA'] - i[1]['CA'])
+     for i in itertools.combinations(chain, 2)]
 
     return(distances)
+
+
+def buildPymolCall(chosenRgListFile='chosenRg.list'):
+    pyMolColors = pandas.Series(['max 28 20 13',
+                                 'average 203 232 107',
+                                 'min 242 233 225'])
+    calls = []
+    chosenRgList = pandas.read_csv(chosenRgListFile, header=None)
+    for ens in range(1, max(chosenRgList[1]) + 1):
+        subset = chosenRgList.loc[chosenRgList[1] == ens]
+        subset.reset_index(drop=True, inplace=True)
+        subset.sort_values(3)
+        merged = pandas.concat([subset, pyMolColors],
+                               axis=1, ignore_index=True)
+        result = pandas.concat([merged[5].astype(str),
+                                merged[4].astype(str),
+                                merged[1].astype(str),
+                                merged[6].astype(str)], axis=1)
+
+        for index, row in result.iterrows():
+            calls.append(row.str.cat(sep=' '))
+
+    return(calls)
+
 
 
 def saxs(args, script_path, wd):
