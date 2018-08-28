@@ -19,6 +19,8 @@ PyMol
 I have installed and run these tools in a Docker image of debian:latest (you may use the Dockerfile inside the Docker directory)
 
 ## Updates
+### 2018-08-28
+Removed old BASH pipelines and cleaned up the repo.
 ### 2018-08-27
 Migration of the pipeline and the quality check scripts to python3 is complete.
 
