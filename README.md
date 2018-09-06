@@ -11,10 +11,9 @@ ATSAS (autorg, datgnom, etc. https://www.embl-hamburg.de/biosaxs/download.html)
 
 Note: the ATSAS binaries are assumed to be in $PATH.
 
-
 MolProbity (no server needed, build/bin/molprobity.* tools only http://molprobity.biochem.duke.edu/)
 
-Note: the required binaries' path must be specified as a command-line or configuration file option.
+Note: the MolProbity binaries' path must be specified as a command-line or configuration file option.
 
 
 R (with data.table and Cairo packages)
