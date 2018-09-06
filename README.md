@@ -90,10 +90,16 @@ They are described in the help section. Using options flags will override the va
 ## Input/Output Specifications
 ### Input
 Generally, the script requires the following input:
-          1)  Entry information (ID and the indexes of each ensemble [subset of models] within the PDB file)
-              Provided as a list of entries ina  file, or as arguements for a single entry only.
+
+          1)  Entry information (ID and the indexes of each ensemble [subset of models] within the PDB file).
+              Provided as a list of entries in a plain text file, or as arguements for a single entry only (see format below, and an example in the 'list-entry-all' file).
+	      
           2)  A PDB file with all of the models, sorted by the ensemble to which they belong.
-          3)  An OPTIONAL sax.dat file
+	      The script will look for a file named: 'XXXX-all.pdb.bz2'
+	  
+          3)  An OPTIONAL SAXS .dat file.
+	      The script will look for a file named: 'XXXX-saxs.dat.bz2'
+
 
 The location of the input can be specified using a variety of options:
 
@@ -115,7 +121,7 @@ The location of the input can be specified using a variety of options:
 
         -p  Path to the directory where the perl and R scripts are.
         
-        -b 	Path to the directory where the MolProbity binaries are.
+        -b  Path to the directory where the MolProbity binaries are.
         
         -m  Path where the PDB model files are (e.g. '-p ~/somewhere/pdb-models/')
         
