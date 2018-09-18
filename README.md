@@ -152,6 +152,16 @@ The location of the input can be specified using a variety of options:
 Entry folders are created for each one as "PEDXXXX"
 Inside there are files and directories containing the output of different analyses: rg/dmax histograms and files, pymol plots, crysol output, and n2n distance calculations.
 
+- ensembles: a "pdb.list" that contains the PDB names of each conformer and usefully formatted metadata (ensemble and conformer numbers). Also, find herein a compressed .pdb.tar.gz file, which contains PDB files (one per conformer) and the n2n.tar.gx file. This last archive contains the n to n' distances of each conformer as a plain text list (separated by a newline character). We will probably not be using this part (the call to this function can be commented out in pipe.py in lines 312-319)
+
+- Crysol: the compressed crysol output files. Useful warnings may be found in the "crysol_summary.txt" and in the ".log.tar.gz" archive.
+
+- Pymol: PyMol renders of conformers with maximum, minimum and closest-to-average (per ensemble). Also here are the .pse files.
+
+- Rg: this directory holds Rg histograms (per ensemble) and several files used to generate them (mainly rg.list).
+
+- 
+
 ## To-do
 Improve this readme.
 

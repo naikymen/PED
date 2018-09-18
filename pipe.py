@@ -314,7 +314,7 @@ def pdb(args, script_path, wd, pdb_list_file='pdb.list'):
         os.chdir('%s/ensembles' % pedxxxx)
         for index, row in pdb_files_df.iterrows():
             n2nd = n2n(pedxxxx, row.file)
-            with open(".".join([row.file, '.n2n']), 'w') as d:
+            with open(".".join([row.file, 'n2n']), 'w') as d:
                 [d.write(str(value) + "\n") for value in n2nd]
         os.chdir(wd)
 
@@ -329,9 +329,9 @@ def pdb(args, script_path, wd, pdb_list_file='pdb.list'):
         os.chdir(wd)
 
         # Cleanup
-        tar_rm("%s/%s.n2n.tar.gz" % (pedxxxx, pedxxxx),
+        tar_rm("%s/ensembles/%s.n2n.tar.gz" % (pedxxxx, pedxxxx),
                "%s/ensembles/*.n2n" % pedxxxx)
-        tar_rm("%s/%s.pdb.tar.gz" % (pedxxxx, pedxxxx),
+        tar_rm("%s/ensembles/%s.pdb.tar.gz" % (pedxxxx, pedxxxx),
                "%s/ensembles/*.pdb" % pedxxxx)
         os.chdir(wd)
 
@@ -381,6 +381,7 @@ def pipe1_crysol(pdb_files_df, pedxxxx):
     tar_rm("../Crysol/%s.alm.tar.gz" % pedxxxx, "./*.alm")
     tar_rm("../Crysol/%s.int.tar.gz" % pedxxxx, "./*.int")
     tar_rm("../Crysol/%s.log.tar.gz" % pedxxxx, "./*.log")
+    sprun("mv crysol_summary.txt ../Crysol/crysol_summary.txt")
 
 
 def n2n(pedxxxx, pdb_file):
