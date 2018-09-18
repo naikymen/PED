@@ -160,8 +160,6 @@ Inside there are files and directories containing the output of different analys
 
 - Rg: this directory holds Rg histograms (per ensemble) and several files used to generate them (mainly rg.list).
 
-- 
-
 ## To-do
 Improve this readme.
 
