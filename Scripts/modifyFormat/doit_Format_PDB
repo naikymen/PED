@@ -1,0 +1,46 @@
+#!/bin/bash
+#
+#$ -cwd
+#$ -j y
+#$ -S /bin/sh
+#   
+
+#PWD: ~/PED-DB/data/Ensembles-Format-to-be-modified/
+
+for j in `cat list-modify-PDB`
+do
+#1AAD;1;pdb
+#1AAD;20;pdb
+#1AAD;32;pdb
+   echo $j > kk
+   uno=$(cut -f1 -d";" kk)
+   dos=$(cut -f2 -d";" kk)
+   echo $uno $dos
+
+     bzip2 -d ./Old-format/${uno}-${dos}.pdb.bz2
+#|         1         2 
+#|12345678901234567890123456789012345678901234567890123456789012345678901234567890
+#|MODEL ${dos}
+     echo 'MODEL' ${dos} > num-model
+     ./modify-PDB-format.exe < ./Old-format/${uno}-${dos}.pdb
+
+     mv ped_pdbs_modifie ./New-format/${uno}-${dos}.pdb
+     rm fort.31 
+     rm xyz_pdbs 
+     rm dat_pdbs 
+     rm num-model 
+     rm cha_pdbs
+     rm sab_pdb
+     bzip2 ./Old-format/${uno}-${dos}.pdb
+
+     cat ${uno}-all.pdb ./New-format/${uno}-${dos}.pdb > x1
+     mv x1 ${uno}-all.pdb
+     bzip2 ./New-format/${uno}-${dos}.pdb
+     
+  rm kk
+done
+  unoo=$(head -1 list-modify-PDB | cut -f1 -d";" )
+  mkdir ./Old-format/${unoo}
+  mkdir ./New-format/${unoo}
+  mv ./New-format/${unoo}*.pdb.bz2 ./New-format/${unoo}/
+  mv ./Old-format/${unoo}*.pdb.bz2 ./Old-format/${unoo}/
