@@ -1,8 +1,7 @@
 # PED
-The pedbPipe3.sh has a help section, call it by using the help option: ```$ bash pedbPipe3.sh -h```
+Scripts for the automatic extraction and processing of the Protein Ensemble Database (PED) entry data from protein ensembles.
 
-The *list-entry-all* file contains the entries in the new format.
-	We should really check if the ensemble numbers/indices are ok.
+A joint effort between Tadeo Saldaño, Nicolás Méndez, and Julia Marchetti. It is a complete re-write of the original PED pipeline.
 
 ## Dependencies
 The scripts are written in Python3 and import the following modules: ```optparse.OptionParser sys re os glob subprocess pandas Bio.PDB.PDBParser itertools json```
